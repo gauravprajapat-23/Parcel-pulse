@@ -78,6 +78,6 @@ func toggle_junction(node_id: String) -> bool:
 	var options: Array = EDGES[node_id]
 	if options.size() != 2:
 		return false
-	selected_output[node_id] = 1 - int(selected_output[node_id])
+	selected_output[node_id] = posmod(int(selected_output.get(node_id, 0)) + 1, options.size())
 	junction_changed.emit(node_id, get_next_node(node_id))
 	return true

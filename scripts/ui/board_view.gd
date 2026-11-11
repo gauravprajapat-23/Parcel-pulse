@@ -127,26 +127,33 @@ func _draw_symbol(center: Vector2, kind: String, tint: Color, radius: float) -> 
 
 
 func _gui_input(event: InputEvent) -> void:
-	if controller == null or controller.phase != ShiftController.Phase.RUNNING:
+	# The project converts Android taps to mouse clicks so both Buttons and
+	# this board share one input path. Do not also process ScreenTouch: that
+	# would flip a junction twice for a single tap on some devices.
+	if not event is InputEventMouseButton:
 		return
-	var tap_position: Vector2
-	if event is InputEventMouseButton:
-		var click := event as InputEventMouseButton
-		if not click.pressed or click.button_index != MOUSE_BUTTON_LEFT:
-			return
-		tap_position = click.position
-	elif event is InputEventScreenTouch:
-		var touch := event as InputEventScreenTouch
-		if not touch.pressed:
-			return
-		tap_position = touch.position
-	else:
+	var click := event as InputEventMouseButton
+	if not click.pressed or click.button_index != MOUSE_BUTTON_LEFT:
 		return
+	if toggle_at_local_position(click.position):
+		accept_event()
 
-	var hit_radius: float = maxf(40.0, minf(size.x, size.y) * 0.10)
+
+func toggle_at_local_position(local_position: Vector2) -> bool:
+	if controller == null or controller.phase != ShiftController.Phase.RUNNING:
+		return false
+	# Larger invisible target than the 31px drawn marker, for one-handed play.
+	var hit_radius: float = minf(72.0, maxf(48.0, minf(size.x, size.y) * 0.13))
+	var closest_id: String = ""
+	var closest_distance: float = INF
 	for junction_id in BoardState.JUNCTION_IDS:
-		if tap_position.distance_to(_point(junction_id)) <= hit_radius:
-			if controller.toggle_junction(junction_id):
-				queue_redraw()
-			accept_event()
-			return
+		var distance: float = local_position.distance_to(_point(junction_id))
+		if distance <= hit_radius and distance < closest_distance:
+			closest_id = junction_id
+			closest_distance = distance
+	if closest_id.is_empty():
+		return false
+	if not controller.toggle_junction(closest_id):
+		return false
+	queue_redraw()
+	return true

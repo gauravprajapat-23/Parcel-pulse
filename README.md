@@ -25,6 +25,7 @@ godot --path .
 ```bash
 godot --headless --path . --editor --import --quit
 godot --headless --path . --script res://tests/test_phase1.gd
+godot --headless --path . --script res://tests/test_ui_smoke.gd
 ```
 
 Read [tests/README.md](tests/README.md) for Windows commands and a physical Android smoke-test checklist.

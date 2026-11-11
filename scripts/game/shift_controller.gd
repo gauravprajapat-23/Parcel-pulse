@@ -75,6 +75,8 @@ func advance(delta: float) -> void:
 	if phase != Phase.RUNNING or delta <= 0.0:
 		return
 	for target in scheduler.tick(delta):
+		if phase != Phase.RUNNING:
+			break
 		_spawn_parcel(target)
 	for parcel in parcels:
 		if phase != Phase.RUNNING:
@@ -93,7 +95,7 @@ func _spawn_parcel(target: String) -> void:
 	_next_parcel_id += 1
 	parcel.next_node = board.get_next_node("depot")
 	if not board.is_valid_edge("depot", parcel.next_node):
-		parcel.active = false
+		# Keep it active until the delivery handler records the error exactly once.
 		_register_delivery(parcel, false)
 		return
 	parcel.travel_direction = (

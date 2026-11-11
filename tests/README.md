@@ -11,6 +11,7 @@ From the repository root:
 ```bash
 godot --headless --path . --editor --import --quit
 godot --headless --path . --script res://tests/test_phase1.gd
+godot --headless --path . --script res://tests/test_ui_smoke.gd
 ```
 
 Successful tests print `Parcel Pulse Phase 1: N passed, 0 failed.` and return exit code 0. A failed assertion reports `FAIL` and returns exit code 1.
@@ -30,7 +31,9 @@ $godot = "C:\\Godot\\Godot_v4.7.2-stable_win64_console.exe"
 & $godot --headless --path . --editor --import --quit
 if ($LASTEXITCODE -ne 0) { throw "Import failed" }
 & $godot --headless --path . --script res://tests/test_phase1.gd
-if ($LASTEXITCODE -ne 0) { throw "Tests failed" }
+if ($LASTEXITCODE -ne 0) { throw "Core tests failed" }
+& $godot --headless --path . --script res://tests/test_ui_smoke.gd
+if ($LASTEXITCODE -ne 0) { throw "UI smoke tests failed" }
 & $godot --path .
 ```
 
@@ -46,3 +49,7 @@ if ($LASTEXITCODE -ne 0) { throw "Tests failed" }
 8. Check narrow/large devices, display cutouts, rotations and offline launch.
 
 Do not treat this checklist as executed until results from actual devices are recorded.
+
+## Touch-input policy
+
+The project enables `input_devices/pointing/emulate_mouse_from_touch=true` so Android taps reach normal Godot Buttons and BoardView as mouse clicks. The board deliberately ignores a raw ScreenTouch event to avoid a single touch toggling the same switch twice. Headless synthetic-event checks do not replace a real-device touch test.

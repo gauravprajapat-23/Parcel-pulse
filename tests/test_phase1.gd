@@ -22,6 +22,8 @@ func _run() -> void:
 	_test_success_and_single_finish_signal()
 	_test_full_shift_with_real_routing()
 	_test_bad_route_is_safe()
+	_test_invalid_depot_counts_mistake()
+	_test_corrupted_junction_recovers()
 	print("Parcel Pulse Phase 1: %d passed, %d failed." % [passed, failed])
 	quit(1 if failed > 0 else 0)
 
@@ -195,3 +197,22 @@ func _test_bad_route_is_safe() -> void:
 	_step(controller, 3.5)
 	_check("invalid junction selection is handled as mistake", controller.mistakes == 1 and controller.correct == 0)
 	_check("invalid junction selection does not crash the shift", controller.phase == ShiftController.Phase.RUNNING)
+
+
+func _test_invalid_depot_counts_mistake() -> void:
+	var controller := ShiftController.new()
+	controller.start_shift()
+	controller.board.selected_output["depot"] = 99
+	_step(controller, 0.1)
+	_check("invalid depot route counts exactly one error", controller.mistakes == 1 and controller.score == 0)
+	_check("invalid depot route does not strand an active parcel", controller.parcels.is_empty())
+	controller.board.selected_output["depot"] = 0
+	_step(controller, 2.5)
+	_check("valid depot route can resume spawning after an error", controller.parcels.size() >= 1 and controller.phase == ShiftController.Phase.RUNNING)
+
+
+func _test_corrupted_junction_recovers() -> void:
+	var board := BoardState.new()
+	board.selected_output["hub"] = 99
+	_check("invalid junction index does not produce nonexistent route", board.get_next_node("hub").is_empty())
+	_check("tapping corrupted junction recovers a valid route", board.toggle_junction("hub") and board.is_valid_edge("hub", board.get_next_node("hub")))
