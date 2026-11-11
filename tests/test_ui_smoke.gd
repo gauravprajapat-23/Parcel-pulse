@@ -33,6 +33,7 @@ func _run() -> void:
 	root.add_child(game)
 	await process_frame
 	_check("gameplay UI scene initializes", game.board_view != null and game.play_button != null and game.result_panel != null)
+	_check("mobile action buttons use two-column layout", game.play_button.get_parent() is GridContainer and (game.play_button.get_parent() as GridContainer).columns == 2)
 	_check("ready screen offers play", not game.play_button.disabled)
 	_check("ready screen prevents switching", not game.board_view.toggle_at_local_position(game.board_view._point("hub")))
 
@@ -59,6 +60,15 @@ func _run() -> void:
 	game.pause_button.pressed.emit()
 	_check("resume button restarts phase", game.controller.phase == ShiftController.Phase.RUNNING)
 
+	game.handle_back_request()
+	_check("Back pauses an active shift instead of quitting", game.controller.phase == ShiftController.Phase.PAUSED)
+	game.handle_back_request()
+	_check("Back from pause returns to ready", game.controller.phase == ShiftController.Phase.READY)
+	game.play_button.pressed.emit()
+	_check("new shift starts after Back navigation", game.controller.phase == ShiftController.Phase.RUNNING)
+	game._notification(Node.NOTIFICATION_APPLICATION_PAUSED)
+	_check("backgrounding an active shift pauses it", game.controller.phase == ShiftController.Phase.PAUSED)
+	game.pause_button.pressed.emit()
 	game.restart_button.pressed.emit()
 	_check("retry resets junction choices", game.controller.board.get_next_node("hub") == "west" and game.controller.correct == 0)
 	for n in range(ShiftController.REQUIRED_DELIVERIES):

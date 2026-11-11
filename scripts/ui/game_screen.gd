@@ -31,6 +31,34 @@ func _physics_process(delta: float) -> void:
 	controller.advance(delta)
 
 
+func _notification(what: int) -> void:
+	# Android Back should not abruptly close an active delivery shift.
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST and is_node_ready():
+		handle_back_request()
+	elif what == NOTIFICATION_APPLICATION_PAUSED and is_node_ready():
+		if controller.phase == ShiftController.Phase.RUNNING:
+			controller.set_paused(true)
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	# Match desktop Escape to Android system Back for manual testing.
+	if event is InputEventKey:
+		var key := event as InputEventKey
+		if key.pressed and not key.echo and key.keycode == KEY_ESCAPE:
+			handle_back_request()
+			get_viewport().set_input_as_handled()
+
+
+func handle_back_request() -> void:
+	match controller.phase:
+		ShiftController.Phase.RUNNING:
+			controller.set_paused(true)
+		ShiftController.Phase.PAUSED, ShiftController.Phase.FINISHED:
+			_on_exit_pressed()
+		ShiftController.Phase.READY:
+			get_tree().quit()
+
+
 func _build_interface() -> void:
 	var backdrop := ColorRect.new()
 	backdrop.color = Color("#101b2c")
@@ -90,8 +118,10 @@ func _build_interface() -> void:
 	hint_label.add_theme_color_override("font_color", Color("#c5d8e9"))
 	column.add_child(hint_label)
 
-	var actions := HBoxContainer.new()
-	actions.add_theme_constant_override("separation", 7)
+	var actions := GridContainer.new()
+	actions.columns = 2
+	actions.add_theme_constant_override("h_separation", 8)
+	actions.add_theme_constant_override("v_separation", 8)
 	column.add_child(actions)
 	play_button = _make_button(actions, "PLAY")
 	pause_button = _make_button(actions, "PAUSE")
@@ -126,7 +156,7 @@ func _make_stat(parent: HBoxContainer) -> Label:
 	return label
 
 
-func _make_button(parent: HBoxContainer, caption: String) -> Button:
+func _make_button(parent: GridContainer, caption: String) -> Button:
 	var button := Button.new()
 	button.text = caption
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL

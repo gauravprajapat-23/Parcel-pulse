@@ -39,6 +39,8 @@ if ($LASTEXITCODE -ne 0) { throw "UI smoke tests failed" }
 
 ## Manual Android smoke test (not automatable headlessly)
 
+For the complete Android debug export and physical-device protocol, use [docs/android_verification.md](../docs/android_verification.md).
+
 1. Install a Godot Android export template matching your Godot version.
 2. Export to an Android test APK and install it on a physical device.
 3. In portrait mode, tap PLAY; confirm parcels move from the depot.

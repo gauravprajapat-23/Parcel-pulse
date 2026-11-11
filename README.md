@@ -8,7 +8,7 @@ A small, original, offline-first parcel-routing game built with **Godot 4.x / GD
 - **3 tap-to-toggle junctions** and **3 symbol-coded destinations**: red diamond, blue circle, green triangle.
 - A deterministic 18-parcel delivery schedule. Complete 12 correct deliveries to win; 3 wrong deliveries end a shift.
 - Fixed-physics-tick movement, score, mistakes and results.
-- Working PLAY, PAUSE/RESUME, RETRY and EXIT-to-ready controls.
+- Working PLAY, PAUSE/RESUME, RETRY and EXIT-to-ready controls, a 2×2 mobile button grid, Back navigation and automatic background pause.
 - Local state only: no backend, no accounts, no third-party assets, no ads, no subscriptions.
 - Dependency-free GDScript regression tests.
 
@@ -28,7 +28,7 @@ godot --headless --path . --script res://tests/test_phase1.gd
 godot --headless --path . --script res://tests/test_ui_smoke.gd
 ```
 
-Read [tests/README.md](tests/README.md) for Windows commands and a physical Android smoke-test checklist.
+Read [tests/README.md](tests/README.md) for Windows commands and a physical Android smoke-test checklist. The Android debug APK script and preset are documented in [docs/android_verification.md](docs/android_verification.md).
 
 ## How to play
 
