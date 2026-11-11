@@ -40,6 +40,8 @@ if ($LASTEXITCODE -ne 0) { throw "Guidance tests failed" }
 & $godot --path .
 ```
 
+See [first-session validation](../docs/first_session_validation.md) for the guided first-30-seconds test and human usability protocol.
+
 ## Manual Android smoke test (not automatable headlessly)
 
 For the complete Android debug export and physical-device protocol, use [docs/android_verification.md](../docs/android_verification.md).

@@ -41,6 +41,10 @@ func _run() -> void:
 
 	game.play_button.pressed.emit()
 	_check("play starts shift", game.controller.phase == ShiftController.Phase.RUNNING and game.play_button.disabled)
+	# A freshly started shift has no parcels until the first simulation tick.
+	game.controller.advance(0.02)
+	game._update_guidance()
+	_check("first parcel appears and coach targets hub", game.controller.parcels.size() == 1 and game.board_view.guide_focus == "hub")
 	var tap: Vector2 = game.board_view._point("hub")
 	var mouse := InputEventMouseButton.new()
 	mouse.button_index = MOUSE_BUTTON_LEFT

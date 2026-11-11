@@ -30,7 +30,7 @@ godot --headless --path . --script res://tests/test_ui_smoke.gd
 godot --headless --path . --script res://tests/test_guidance.gd
 ```
 
-Read [tests/README.md](tests/README.md) for Windows commands and a physical Android smoke-test checklist. The Android debug APK script and preset are documented in [docs/android_verification.md](docs/android_verification.md).
+Read [tests/README.md](tests/README.md) for Windows commands and a physical Android smoke-test checklist. The [first-session validation plan](docs/first_session_validation.md) covers the guided tutorial and player comprehension test. The Android debug APK script and preset are documented in [docs/android_verification.md](docs/android_verification.md).
 
 ## How to play
 
