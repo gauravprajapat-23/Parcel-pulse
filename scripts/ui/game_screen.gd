@@ -15,6 +15,8 @@ var restart_button: Button
 var exit_button: Button
 var result_backdrop: ColorRect
 var result_panel: ResultScreen
+var _last_android_back_msec: int = -1000
+const ANDROID_BACK_DEBOUNCE_MS: int = 300
 
 
 func _ready() -> void:
@@ -34,7 +36,11 @@ func _physics_process(delta: float) -> void:
 func _notification(what: int) -> void:
 	# Android Back should not abruptly close an active delivery shift.
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST and is_node_ready():
-		handle_back_request()
+		# Godot 4.7.x / Android 16 may emit duplicate Back notifications.
+		var now_msec: int = Time.get_ticks_msec()
+		if now_msec - _last_android_back_msec >= ANDROID_BACK_DEBOUNCE_MS:
+			_last_android_back_msec = now_msec
+			handle_back_request()
 	elif what == NOTIFICATION_APPLICATION_PAUSED and is_node_ready():
 		if controller.phase == ShiftController.Phase.RUNNING:
 			controller.set_paused(true)

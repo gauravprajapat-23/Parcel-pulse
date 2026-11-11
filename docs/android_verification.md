@@ -43,7 +43,7 @@ Test one small Android phone and one larger Android device if available. Record 
 | Parcel routing | Correct destinations increment score once | Not run |
 | Mistake limit | Third wrong destination ends shift | Not run |
 | Pause/Resume | Parcel position and spawn schedule freeze and resume | Not run |
-| System Back | During shift: pause; from pause/result: return to ready | Not run |
+| System Back | During shift: pause; from pause/result: return to ready; one physical Back press must never trigger two transitions | Not run |
 | App background/resume | In-progress shift pauses rather than silently progressing | Not run |
 | Retry/Exit | No duplicate parcels, timers, or score events | Not run |
 | Rotation | Portrait remains usable | Not run |
@@ -60,3 +60,7 @@ This is a debug **APK** preset for device testing only. Before Play Store submis
 The placeholder package ID `com.gauravprajapat23.parcelpulse` is not reserved or validated for Play Store uniqueness. Confirm it before publishing.
 
 Do not declare this gate passed until the Godot import, both suites, APK export, and a real-device smoke checklist have completed successfully.
+
+### Android 16 Back-event regression
+
+Godot 4.7.2 has a reported Android 16 / target SDK 36 issue where a single Back press can deliver duplicate notifications (see [Godot issue #123454](https://github.com/godotengine/godot/issues/123454)). The game ignores a second Android Back notification within 300 ms. Test a real Android 16 device with single presses and with two deliberately separate presses. This is a UI safeguard, not a substitute for an engine fix.

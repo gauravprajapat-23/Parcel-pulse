@@ -60,8 +60,10 @@ func _run() -> void:
 	game.pause_button.pressed.emit()
 	_check("resume button restarts phase", game.controller.phase == ShiftController.Phase.RUNNING)
 
-	game.handle_back_request()
+	game._notification(Node.NOTIFICATION_WM_GO_BACK_REQUEST)
 	_check("Back pauses an active shift instead of quitting", game.controller.phase == ShiftController.Phase.PAUSED)
+	game._notification(Node.NOTIFICATION_WM_GO_BACK_REQUEST)
+	_check("duplicate Android Back notification does not exit the shift", game.controller.phase == ShiftController.Phase.PAUSED)
 	game.handle_back_request()
 	_check("Back from pause returns to ready", game.controller.phase == ShiftController.Phase.READY)
 	game.play_button.pressed.emit()
