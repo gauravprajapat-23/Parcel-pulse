@@ -33,7 +33,15 @@ static func get_guidance(controller: ShiftController) -> Dictionary:
 	var junction_id: String = nearest.next_node
 	var desired: String = desired_exit(junction_id, nearest.destination)
 	if not controller.board.is_valid_edge(junction_id, desired):
-		return {"message": "Check the approaching parcel route.", "focus": "", "needs_action": false}
+		# The package already entered an irreversible wrong branch.
+		# Never tell a player to tap toward a non-matching destination.
+		var correct_branch: String = "EAST" if nearest.destination == "green" else "WEST"
+		return {
+			"message": "%s took the wrong branch! Choose HUB to %s next time." % [
+				nearest.destination.to_upper(), correct_branch
+			],
+			"focus": "", "needs_action": false
+		}
 	var needs_action: bool = controller.board.get_next_node(junction_id) != desired
 	var verb: String = "TAP" if needs_action else "READY"
 	var message: String = "%s: %s %s to %s" % [
@@ -45,9 +53,12 @@ static func get_guidance(controller: ShiftController) -> Dictionary:
 static func desired_exit(junction_id: String, destination: String) -> String:
 	match junction_id:
 		"hub":
-			return "east" if destination == "green" else "west"
+			if destination in ["red", "blue", "green"]:
+				return "east" if destination == "green" else "west"
 		"west":
-			return "blue" if destination == "blue" else "red"
+			if destination in ["red", "blue"]:
+				return destination
 		"east":
-			return "green" if destination == "green" else "blue"
+			if destination in ["blue", "green"]:
+				return destination
 	return ""

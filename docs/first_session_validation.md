@@ -13,7 +13,7 @@ Use `tools/build_android_debug.ps1 -InstallOnDevice` after import and all three 
 3. Tap HUB while the red package approaches. The arrow should point EAST and the guide must say TAP HUB to WEST, without changing the score. Tap again to restore WEST.
 4. When the red package travels toward WEST, the guide must highlight the WEST junction and show READY WEST to RED.
 5. First red package reaches RED: score +100, zero mistakes, single feedback message. Confirm no double scoring.
-6. For a blue circle, change WEST to BLUE before its arrival. For a green triangle, change HUB to EAST (and ensure EAST routes GREEN).
+6. For a blue circle, change WEST to BLUE before its arrival. For a green triangle, change HUB to EAST (and ensure EAST routes GREEN). Confirm that a parcel already sent into an impossible branch displays a mistake warning instead of a misleading target.
 7. Toggle GUIDE OFF: the guide and highlight disappear, while package movement and scoring continue normally. Toggle on: guidance resumes.
 8. Pause, background, resume, restart, and system Back; verify guide state stays consistent with board state and never changes the routing itself.
 9. Let three mistakes occur; confirm the results panel, then retry and verify a clean reset.

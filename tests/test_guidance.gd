@@ -21,6 +21,7 @@ func _run() -> void:
 	_test_ready_and_initial_red()
 	_test_second_blue_and_third_green()
 	_test_guide_is_pure()
+	_test_unreachable_branch_explained()
 	print("Parcel Pulse routing coach: %d passed, %d failed." % [passed, failed])
 	quit(1 if failed > 0 else 0)
 
@@ -72,3 +73,15 @@ func _test_guide_is_pure() -> void:
 	_check("guide never changes routing state", c.board.selected_output == before)
 	_check("guide never spawns parcels", c.parcels.size() == parcel_count)
 	_check("guide never changes score", c.score == score_before)
+
+
+func _test_unreachable_branch_explained() -> void:
+	_check("green cannot be routed out of west", RoutingCoach.desired_exit("west", "green") == "")
+	_check("red cannot be routed out of east", RoutingCoach.desired_exit("east", "red") == "")
+	var c := ShiftController.new()
+	c.start_shift()
+	c.toggle_junction("hub")
+	_step(c, 1.2)
+	var warning: Dictionary = RoutingCoach.get_guidance(c)
+	_check("red on east branch shows a mistake explanation", str(warning["message"]).contains("wrong branch"))
+	_check("unreachable parcel is never shown a false target", warning["focus"] == "" and not warning["needs_action"])
