@@ -9,6 +9,10 @@ var progress_label: Label
 var score_label: Label
 var mistakes_label: Label
 var hint_label: Label
+var coach_label: Label
+var guide_button: Button
+var guide_enabled: bool = true
+var _last_guidance: String = ""
 var play_button: Button
 var pause_button: Button
 var restart_button: Button
@@ -27,10 +31,12 @@ func _ready() -> void:
 	controller.shift_finished.connect(_on_shift_finished)
 	_on_phase_changed(controller.phase)
 	_on_totals_changed(controller.score, controller.correct, controller.mistakes)
+	_update_guidance()
 
 
 func _physics_process(delta: float) -> void:
 	controller.advance(delta)
+	_update_guidance()
 
 
 func _notification(what: int) -> void:
@@ -116,6 +122,23 @@ func _build_interface() -> void:
 	board_view.bind_controller(controller)
 	board_panel.add_child(board_view)
 
+	var coach_row := HBoxContainer.new()
+	coach_row.add_theme_constant_override("separation", 8)
+	column.add_child(coach_row)
+	coach_label = Label.new()
+	coach_label.text = "MATCH COLOR + SHAPE. Tap the golden switches."
+	coach_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	coach_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	coach_label.custom_minimum_size = Vector2(0, 52)
+	coach_label.add_theme_font_size_override("font_size", 16)
+	coach_label.add_theme_color_override("font_color", Color("#ffe0a7"))
+	coach_row.add_child(coach_label)
+	guide_button = Button.new()
+	guide_button.text = "GUIDE ON"
+	guide_button.custom_minimum_size = Vector2(106, 52)
+	guide_button.pressed.connect(_on_guide_pressed)
+	coach_row.add_child(guide_button)
+
 	hint_label = Label.new()
 	hint_label.text = "Tap the golden junctions to switch tracks."
 	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -192,6 +215,32 @@ func _center_result() -> void:
 	result_panel.size = Vector2(box_width, 310)
 
 
+func _on_guide_pressed() -> void:
+	guide_enabled = not guide_enabled
+	guide_button.text = "GUIDE ON" if guide_enabled else "GUIDE OFF"
+	_last_guidance = ""
+	_update_guidance()
+
+
+func _update_guidance() -> void:
+	if coach_label == null or board_view == null:
+		return
+	if not guide_enabled:
+		if _last_guidance != "OFF":
+			coach_label.text = "Routing guide hidden. Tap GUIDE OFF to restore."
+			board_view.set_guide_focus("", false)
+			_last_guidance = "OFF"
+		return
+	var advice: Dictionary = RoutingCoach.get_guidance(controller)
+	var message: String = str(advice["message"])
+	var focus: String = str(advice["focus"])
+	var needs_action: bool = bool(advice["needs_action"])
+	if _last_guidance != message:
+		coach_label.text = message
+		_last_guidance = message
+	board_view.set_guide_focus(focus, needs_action)
+
+
 func _on_play_pressed() -> void:
 	result_backdrop.visible = false
 	controller.start_shift()
@@ -227,6 +276,7 @@ func _on_phase_changed(new_phase: int) -> void:
 	exit_button.disabled = new_phase == ShiftController.Phase.READY
 	pause_button.text = "RESUME" if new_phase == ShiftController.Phase.PAUSED else "PAUSE"
 	board_view.queue_redraw()
+	_update_guidance()
 
 
 func _on_totals_changed(new_score: int, delivered: int, errors: int) -> void:

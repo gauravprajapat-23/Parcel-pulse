@@ -10,6 +10,7 @@ A small, original, offline-first parcel-routing game built with **Godot 4.x / GD
 - Fixed-physics-tick movement, score, mistakes and results.
 - Working PLAY, PAUSE/RESUME, RETRY and EXIT-to-ready controls, a 2×2 mobile button grid, Back navigation and automatic background pause.
 - Local state only: no backend, no accounts, no third-party assets, no ads, no subscriptions.
+- An optional read-only routing guide highlights the next junction and shows TAP vs READY instructions.
 - Dependency-free GDScript regression tests.
 
 ## Run locally
@@ -26,6 +27,7 @@ godot --path .
 godot --headless --path . --editor --import --quit
 godot --headless --path . --script res://tests/test_phase1.gd
 godot --headless --path . --script res://tests/test_ui_smoke.gd
+godot --headless --path . --script res://tests/test_guidance.gd
 ```
 
 Read [tests/README.md](tests/README.md) for Windows commands and a physical Android smoke-test checklist. The Android debug APK script and preset are documented in [docs/android_verification.md](docs/android_verification.md).
@@ -33,8 +35,8 @@ Read [tests/README.md](tests/README.md) for Windows commands and a physical Andr
 ## How to play
 
 1. Press **PLAY**.
-2. Watch a colored parcel travel from the depot toward the junctions.
-3. Tap a **golden junction** to change its white routing arrow.
+2. Watch the live guide (GUIDE ON by default); it highlights the next junction to check. Turn it off anytime.
+3. Tap a **golden junction** when the guide says TAP to change its white routing arrow.
 4. Guide red diamonds to red, blue circles to blue and green triangles to green.
 5. Get 12 right before making 3 mistakes.
 

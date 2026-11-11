@@ -4,6 +4,8 @@ class_name BoardView
 # Render-only view: all routing, scoring and delivery states belong to
 # ShiftController and BoardState.
 var controller: ShiftController
+var guide_focus: String = ""
+var guide_needs_action: bool = false
 
 const INK = Color("#d9edfa")
 const ROAD_BACK = Color("#162b40")
@@ -19,6 +21,14 @@ func bind_controller(value: ShiftController) -> void:
 	controller = value
 	controller.board.junction_changed.connect(_on_junction_changed)
 	controller.phase_changed.connect(_on_phase_changed)
+	queue_redraw()
+
+
+func set_guide_focus(node_id: String, needs_action: bool) -> void:
+	if guide_focus == node_id and guide_needs_action == needs_action:
+		return
+	guide_focus = node_id
+	guide_needs_action = needs_action
 	queue_redraw()
 
 
@@ -98,6 +108,12 @@ func _draw() -> void:
 			tip, tip - direction * 9.0 + side * 6.0,
 			tip - direction * 9.0 - side * 6.0
 		]), Color.WHITE)
+
+	# Circle only the next junction the live guide is referring to.
+	if controller.board.is_junction(guide_focus):
+		var focus: Vector2 = _point(guide_focus)
+		var ring: Color = Color("#ffde84") if guide_needs_action else Color("#83efb3")
+		draw_arc(focus, 38.0, 0.0, TAU, 36, ring, 4.0, true)
 
 	for parcel in controller.parcels:
 		if not parcel.active:

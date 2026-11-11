@@ -12,6 +12,7 @@ From the repository root:
 godot --headless --path . --editor --import --quit
 godot --headless --path . --script res://tests/test_phase1.gd
 godot --headless --path . --script res://tests/test_ui_smoke.gd
+godot --headless --path . --script res://tests/test_guidance.gd
 ```
 
 Successful tests print `Parcel Pulse Phase 1: N passed, 0 failed.` and return exit code 0. A failed assertion reports `FAIL` and returns exit code 1.
@@ -34,6 +35,8 @@ if ($LASTEXITCODE -ne 0) { throw "Import failed" }
 if ($LASTEXITCODE -ne 0) { throw "Core tests failed" }
 & $godot --headless --path . --script res://tests/test_ui_smoke.gd
 if ($LASTEXITCODE -ne 0) { throw "UI smoke tests failed" }
+& $godot --headless --path . --script res://tests/test_guidance.gd
+if ($LASTEXITCODE -ne 0) { throw "Guidance tests failed" }
 & $godot --path .
 ```
 

@@ -35,6 +35,8 @@ func _run() -> void:
 	_check("gameplay UI scene initializes", game.board_view != null and game.play_button != null and game.result_panel != null)
 	_check("mobile action buttons use two-column layout", game.play_button.get_parent() is GridContainer and (game.play_button.get_parent() as GridContainer).columns == 2)
 	_check("ready screen offers play", not game.play_button.disabled)
+	_check("guide visible on first launch", game.coach_label != null and game.guide_button != null and game.guide_enabled)
+	_check("new player receives guidance", not game.coach_label.text.is_empty())
 	_check("ready screen prevents switching", not game.board_view.toggle_at_local_position(game.board_view._point("hub")))
 
 	game.play_button.pressed.emit()
@@ -46,6 +48,12 @@ func _run() -> void:
 	mouse.position = tap
 	game.board_view._gui_input(mouse)
 	_check("mouse tap switches route once", game.controller.board.get_next_node("hub") == "east")
+	game._update_guidance()
+	_check("live guide responds to route change", game.board_view.guide_focus == "hub" and game.board_view.guide_needs_action)
+	game.guide_button.pressed.emit()
+	_check("guide can be hidden during play", not game.guide_enabled and game.board_view.guide_focus == "")
+	game.guide_button.pressed.emit()
+	_check("guide can be restored during play", game.guide_enabled and game.board_view.guide_focus == "hub")
 
 	var touch := InputEventScreenTouch.new()
 	touch.position = tap
