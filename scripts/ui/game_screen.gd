@@ -16,6 +16,11 @@ var hint_label: Label
 var coach_label: Label
 var guide_button: Button
 var guide_enabled: bool = true
+var progress_profile: Dictionary = {}
+var level_row: HBoxContainer
+var level_name_label: Label
+var previous_level_button: Button
+var next_level_button: Button
 var _last_guidance: String = ""
 var play_button: Button
 var pause_button: Button
@@ -44,13 +49,16 @@ const ANDROID_BACK_DEBOUNCE_MS: int = 300
 
 func _ready() -> void:
 	_build_interface()
+	progress_profile = ProgressStore.load_profile()
 	controller.phase_changed.connect(_on_phase_changed)
+	controller.level_changed.connect(_on_level_changed)
 	controller.totals_changed.connect(_on_totals_changed)
 	controller.delivery_scored.connect(_on_delivery_scored)
 	controller.shift_finished.connect(_on_shift_finished)
 	_on_phase_changed(controller.phase)
 	_on_totals_changed(controller.score, controller.correct, controller.mistakes)
 	_update_guidance()
+	_update_level_selection()
 	resized.connect(_on_root_resized)
 	_apply_responsive_layout(get_viewport_rect().size)
 
@@ -155,6 +163,30 @@ func _build_interface() -> void:
 	progress_label = hud_panel.deliveries_card.value_label
 	score_label = hud_panel.score_card.value_label
 	mistakes_label = hud_panel.lives_card.value_label
+
+	# Select and preview offline stages from READY; locked stages stay visible
+	# but cannot start until the previous stage is completed.
+	level_row = HBoxContainer.new()
+	level_row.add_theme_constant_override("separation", 7)
+	screen_column.add_child(level_row)
+	previous_level_button = Button.new()
+	previous_level_button.text = "◀"
+	previous_level_button.custom_minimum_size = Vector2(50, 42)
+	ParcelTheme.style_button(previous_level_button, "quiet")
+	previous_level_button.pressed.connect(_on_previous_level)
+	level_row.add_child(previous_level_button)
+	level_name_label = Label.new()
+	level_name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	level_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	level_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	ParcelTheme.label_style(level_name_label, 15, ParcelTheme.GOLD_LIGHT)
+	level_row.add_child(level_name_label)
+	next_level_button = Button.new()
+	next_level_button.text = "▶"
+	next_level_button.custom_minimum_size = Vector2(50, 42)
+	ParcelTheme.style_button(next_level_button, "quiet")
+	next_level_button.pressed.connect(_on_next_level)
+	level_row.add_child(next_level_button)
 
 	board_container = PanelContainer.new()
 	board_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -262,11 +294,16 @@ func _apply_responsive_layout(logical_size: Vector2) -> void:
 	sound_button.custom_minimum_size.x = 64.0 if MobileLayout.profile_for(logical_size) != MobileLayout.FULL else 76.0
 	ParcelTheme.label_style(title_parcel, int(metrics["title"]), ParcelTheme.TEXT)
 	ParcelTheme.label_style(title_pulse, int(metrics["title"]), ParcelTheme.GOLD)
-	tagline_label.visible = bool(metrics["tagline_label"])
+	tagline_label.visible = bool(metrics["subtitle"])
 	hud_panel.apply_layout_metrics(int(metrics["stats_height"]))
 	board_view.custom_minimum_size = metrics["board"]
 	ParcelTheme.label_style(coach_label, int(metrics["coach_font"]), ParcelTheme.GOLD_LIGHT)
 	coach_label.custom_minimum_size = Vector2(0, float(metrics["coach_height"]))
+	level_name_label.add_theme_font_size_override(
+		"font_size", 12 if MobileLayout.profile_for(logical_size) == MobileLayout.SMALL else 15
+	)
+	previous_level_button.custom_minimum_size.y = float(metrics["action_height"])
+	next_level_button.custom_minimum_size.y = float(metrics["action_height"])
 	hint_label.visible = bool(metrics["hint"])
 	action_bar.set_button_height(float(metrics["action_height"]))
 	sound_button.add_theme_font_size_override("font_size", int(metrics["sound_font"]))
@@ -305,6 +342,58 @@ func _center_result() -> void:
 		(result_backdrop.size.y - box_height) * 0.5
 	)
 	result_panel.size = Vector2(box_width, box_height)
+
+
+func _on_previous_level() -> void:
+	_select_preview_level(controller.level_index - 1)
+
+
+func _on_next_level() -> void:
+	_select_preview_level(controller.level_index + 1)
+
+
+func _select_preview_level(index: int) -> void:
+	if controller.phase != ShiftController.Phase.READY:
+		return
+	if controller.select_level(index):
+		_hide_results_and_reset_fx()
+		_update_guidance()
+
+
+func _on_level_changed(_index: int) -> void:
+	_update_level_selection()
+	_update_guidance()
+
+
+func _update_level_selection() -> void:
+	if level_row == null or not is_node_ready():
+		return
+	var index: int = controller.level_index
+	var definition: Dictionary = LevelCatalog.get_level(index)
+	var unlocked: bool = ProgressStore.is_unlocked(progress_profile, index)
+	var label_text: String = "STAGE %02d · %s" % [index + 1, str(definition.get("name", "Unknown"))]
+	var best: Dictionary = progress_profile.get("best", {})
+	var record: Dictionary = best.get(str(index), {})
+	if not unlocked:
+		label_text += "  [LOCKED]"
+	elif int(record.get("stars", 0)) > 0:
+		label_text += "  " + "★".repeat(int(record["stars"]))
+	level_name_label.text = label_text
+	level_name_label.tooltip_text = str(definition.get("tagline", ""))
+	previous_level_button.disabled = index <= 0
+	next_level_button.disabled = index >= LevelCatalog.count() - 1
+	level_row.visible = controller.phase == ShiftController.Phase.READY
+	if controller.phase == ShiftController.Phase.READY:
+		if unlocked:
+			action_bar.primary_button.configure("PLAY", "play", "gold")
+			action_bar.primary_button.disabled = false
+		else:
+			action_bar.primary_button.configure("LOCKED", "play", "quiet")
+			action_bar.primary_button.disabled = true
+		if not unlocked:
+			hint_label.text = "Complete earlier stages to unlock this map."
+		else:
+			hint_label.text = str(definition.get("tagline", ""))
 
 
 func _on_sound_toggle_pressed() -> void:
@@ -362,6 +451,9 @@ func _on_primary_pressed() -> void:
 
 
 func _on_play_pressed() -> void:
+	if not ProgressStore.is_unlocked(progress_profile, controller.level_index):
+		hint_label.text = "This stage is locked. Clear the previous one first."
+		return
 	_hide_results_and_reset_fx()
 	controller.start_shift()
 
@@ -392,12 +484,13 @@ func _on_phase_changed(new_phase: int) -> void:
 		ShiftController.Phase.FINISHED:
 			hint_label.text = "Shift over. Review your deliveries."
 	action_bar.apply_phase(new_phase)
+	_update_level_selection()
 	board_view.queue_redraw()
 	_update_guidance()
 
 
 func _on_totals_changed(new_score: int, delivered: int, errors: int) -> void:
-	hud_panel.update_stats(delivered, new_score, errors)
+	hud_panel.update_stats(delivered, new_score, errors, controller.required_deliveries)
 
 
 func _on_delivery_scored(parcel: DeliveryParcel, matched: bool) -> void:
@@ -418,7 +511,13 @@ func _on_delivery_scored(parcel: DeliveryParcel, matched: bool) -> void:
 
 
 func _on_shift_finished(success: bool, earned_score: int, delivered: int, errors: int) -> void:
-	result_panel.show_result(success, earned_score, delivered, errors)
+	result_panel.show_result(success, earned_score, delivered, errors, controller.required_deliveries)
+	if success:
+		progress_profile = ProgressStore.record_win(
+			progress_profile, controller.level_index, earned_score, errors
+		)
+		if not ProgressStore.save_profile(progress_profile):
+			push_warning("Parcel Pulse progression could not be saved on this device.")
 	result_backdrop.visible = true
 	result_backdrop.modulate.a = 1.0 if reduced_motion else 0.0
 	_center_result()

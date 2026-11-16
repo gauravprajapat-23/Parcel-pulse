@@ -53,15 +53,15 @@ func _ready() -> void:
 	menu_button.pressed.connect(func() -> void: menu_requested.emit())
 
 
-func show_result(success: bool, earned_score: int, delivered: int, errors: int) -> void:
+func show_result(success: bool, earned_score: int, delivered: int, errors: int, quota: int = ShiftController.REQUIRED_DELIVERIES) -> void:
 	title_label.text = "SHIFT COMPLETE!" if success else "SHIFT ENDED"
 	if success:
 		var stars: int = clampi(3 - errors, 1, 3)
 		rating_label.text = "★".repeat(stars) + "☆".repeat(3 - stars)
 	else:
 		rating_label.text = "KEEP PRACTICING"
-	details_label.text = "DELIVERED %d / 12    MISTAKES %d / 3\nSCORE  %d" % [
-		delivered, errors, earned_score
+	details_label.text = "DELIVERED %d / %d    MISTAKES %d / 3\nSCORE  %d" % [
+		delivered, quota, errors, earned_score
 	]
 
 
