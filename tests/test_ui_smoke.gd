@@ -34,13 +34,17 @@ func _run() -> void:
 	await process_frame
 	_check("gameplay UI scene initializes", game.board_view != null and game.play_button != null and game.result_panel != null)
 	_check("mobile action buttons use two-column layout", game.play_button.get_parent() is GridContainer and (game.play_button.get_parent() as GridContainer).columns == 2)
+	_check("HUD and action bar are reusable scenes", game.hud_panel is HudPanel and game.action_bar is ActionBar)
+	_check("primary play/pause action shares one button", game.play_button == game.pause_button)
+	_check("HUD starts with 0 deliveries and 3 tries", game.progress_label.text == "0/12" and game.mistakes_label.text == "3")
 	_check("ready screen offers play", not game.play_button.disabled)
 	_check("guide visible on first launch", game.coach_label != null and game.guide_button != null and game.guide_enabled)
 	_check("new player receives guidance", not game.coach_label.text.is_empty())
+	_check("guide action is in the bottom grid", game.guide_button.get_parent() == game.action_bar)
 	_check("ready screen prevents switching", not game.board_view.toggle_at_local_position(game.board_view._point("hub")))
 
 	game.play_button.pressed.emit()
-	_check("play starts shift", game.controller.phase == ShiftController.Phase.RUNNING and game.play_button.disabled)
+	_check("play starts shift", game.controller.phase == ShiftController.Phase.RUNNING and game.play_button.text == "PAUSE" and not game.play_button.disabled)
 	# A freshly started shift has no parcels until the first simulation tick.
 	game.controller.advance(0.02)
 	game._update_guidance()
@@ -88,6 +92,7 @@ func _run() -> void:
 	for n in range(ShiftController.REQUIRED_DELIVERIES):
 		game.controller._register_delivery(DeliveryParcel.new(n, "red"), true)
 	_check("winning result overlay appears", game.result_backdrop.visible and game.controller.phase == ShiftController.Phase.FINISHED)
+	_check("HUD updates delivery count and score", game.progress_label.text == "12/12" and game.score_label.text == "1200")
 	game.result_panel.retry_requested.emit()
 	_check("results retry returns to running without overlay", not game.result_backdrop.visible and game.controller.phase == ShiftController.Phase.RUNNING)
 	game.exit_button.pressed.emit()

@@ -4,6 +4,8 @@ class_name ResultScreen
 signal retry_requested()
 signal menu_requested()
 
+const ACTION_BUTTON_SCENE = preload("res://scenes/ui/action_button.tscn")
+
 var title_label: Label
 var details_label: Label
 
@@ -34,17 +36,15 @@ func _ready() -> void:
 	details_label.add_theme_font_size_override("font_size", 19)
 	column.add_child(details_label)
 
-	var retry_button := Button.new()
-	retry_button.text = "PLAY AGAIN"
-	retry_button.custom_minimum_size = Vector2(0, 48)
-	retry_button.pressed.connect(func() -> void: retry_requested.emit())
+	var retry_button := ACTION_BUTTON_SCENE.instantiate() as ActionButton
 	column.add_child(retry_button)
+	retry_button.configure("PLAY AGAIN", "retry", "gold")
+	retry_button.pressed.connect(func() -> void: retry_requested.emit())
 
-	var menu_button := Button.new()
-	menu_button.text = "BACK TO MENU"
-	menu_button.custom_minimum_size = Vector2(0, 48)
-	menu_button.pressed.connect(func() -> void: menu_requested.emit())
+	var menu_button := ACTION_BUTTON_SCENE.instantiate() as ActionButton
 	column.add_child(menu_button)
+	menu_button.configure("BACK TO MENU", "exit", "secondary")
+	menu_button.pressed.connect(func() -> void: menu_requested.emit())
 
 
 func show_result(success: bool, earned_score: int, delivered: int, errors: int) -> void:
@@ -56,8 +56,8 @@ func show_result(success: bool, earned_score: int, delivered: int, errors: int) 
 
 func _panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#20334c")
-	style.border_color = Color("#6985a3")
+	style.bg_color = ParcelTheme.PANEL_RAISED
+	style.border_color = ParcelTheme.CYAN
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(20)
 	return style

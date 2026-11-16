@@ -11,6 +11,7 @@ A small, original, offline-first parcel-routing game built with **Godot 4.x / GD
 - Working PLAY, PAUSE/RESUME, RETRY and EXIT-to-ready controls, a 2×2 mobile button grid, Back navigation and automatic background pause.
 - Local state only: no backend, no accounts, no third-party assets, no ads, no subscriptions.
 - An optional read-only routing guide highlights the next junction and shows TAP vs READY instructions.
+- UI-01A reusable neon theme, three compact HUD cards, and a four-button action bar (PLAY/PAUSE/RESUME, RETRY, GUIDE, EXIT).
 - Dependency-free GDScript regression tests.
 
 ## Run locally

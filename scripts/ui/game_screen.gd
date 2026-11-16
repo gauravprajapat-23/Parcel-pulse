@@ -2,9 +2,13 @@ extends Control
 class_name GameScreen
 
 const RESULTS_SCENE = preload("res://scenes/result_screen.tscn")
+const HUD_SCENE = preload("res://scenes/ui/hud_panel.tscn")
+const ACTION_BAR_SCENE = preload("res://scenes/ui/action_bar.tscn")
 
 var controller: ShiftController = ShiftController.new()
 var board_view: BoardView
+var hud_panel: HudPanel
+var action_bar: ActionBar
 var progress_label: Label
 var score_label: Label
 var mistakes_label: Label
@@ -73,46 +77,55 @@ func handle_back_request() -> void:
 
 func _build_interface() -> void:
 	var backdrop := ColorRect.new()
-	backdrop.color = Color("#101b2c")
+	backdrop.color = ParcelTheme.BACKDROP
 	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
 	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(backdrop)
 
 	var margins := MarginContainer.new()
 	margins.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margins.add_theme_constant_override("margin_left", 20)
-	margins.add_theme_constant_override("margin_right", 20)
-	margins.add_theme_constant_override("margin_top", 28)
-	margins.add_theme_constant_override("margin_bottom", 24)
+	margins.add_theme_constant_override("margin_left", 16)
+	margins.add_theme_constant_override("margin_right", 16)
+	margins.add_theme_constant_override("margin_top", 20)
+	margins.add_theme_constant_override("margin_bottom", 18)
 	add_child(margins)
 
 	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 14)
+	column.add_theme_constant_override("separation", 10)
 	margins.add_child(column)
 
-	var heading := Label.new()
-	heading.text = "PARCEL PULSE"
-	heading.add_theme_font_size_override("font_size", 34)
-	heading.add_theme_color_override("font_color", Color("#ffe0a7"))
-	column.add_child(heading)
+	# UI-01A: brand typography and stat cards share one palette.
+	var title_row := HBoxContainer.new()
+	title_row.add_theme_constant_override("separation", 7)
+	title_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	column.add_child(title_row)
+	var parcel_title := Label.new()
+	parcel_title.text = "PARCEL"
+	ParcelTheme.label_style(parcel_title, 30, ParcelTheme.TEXT)
+	title_row.add_child(parcel_title)
+	var pulse_title := Label.new()
+	pulse_title.text = "PULSE"
+	ParcelTheme.label_style(pulse_title, 30, ParcelTheme.GOLD)
+	title_row.add_child(pulse_title)
 
 	var subtitle := Label.new()
-	subtitle.text = "ONE TAP. PERFECT DELIVERIES."
-	subtitle.add_theme_font_size_override("font_size", 14)
-	subtitle.add_theme_color_override("font_color", Color("#9fb7cb"))
+	subtitle.text = "ROUTE  •  DELIVER  •  KEEP THE CITY MOVING"
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ParcelTheme.label_style(subtitle, 12, ParcelTheme.CYAN)
 	column.add_child(subtitle)
 
-	var stats := HBoxContainer.new()
-	stats.add_theme_constant_override("separation", 8)
-	column.add_child(stats)
-	progress_label = _make_stat(stats)
-	score_label = _make_stat(stats)
-	mistakes_label = _make_stat(stats)
+	hud_panel = HUD_SCENE.instantiate() as HudPanel
+	column.add_child(hud_panel)
+	progress_label = hud_panel.deliveries_card.value_label
+	score_label = hud_panel.score_card.value_label
+	mistakes_label = hud_panel.lives_card.value_label
 
 	var board_panel := PanelContainer.new()
 	board_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	board_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	board_panel.add_theme_stylebox_override("panel", _panel_style())
+	board_panel.add_theme_stylebox_override(
+		"panel", ParcelTheme.panel_style(ParcelTheme.PANEL, ParcelTheme.BORDER, 22, 2)
+	)
 	column.add_child(board_panel)
 
 	board_view = BoardView.new()
@@ -122,44 +135,46 @@ func _build_interface() -> void:
 	board_view.bind_controller(controller)
 	board_panel.add_child(board_view)
 
-	var coach_row := HBoxContainer.new()
-	coach_row.add_theme_constant_override("separation", 8)
-	column.add_child(coach_row)
+	# The guidance panel stays compact; its on/off control lives in the action bar.
+	var coach_panel := PanelContainer.new()
+	coach_panel.add_theme_stylebox_override(
+		"panel", ParcelTheme.panel_style(ParcelTheme.PANEL, ParcelTheme.BORDER, 16, 1)
+	)
+	column.add_child(coach_panel)
+	var coach_margin := MarginContainer.new()
+	coach_margin.add_theme_constant_override("margin_left", 12)
+	coach_margin.add_theme_constant_override("margin_right", 12)
+	coach_margin.add_theme_constant_override("margin_top", 8)
+	coach_margin.add_theme_constant_override("margin_bottom", 8)
+	coach_panel.add_child(coach_margin)
 	coach_label = Label.new()
 	coach_label.text = "MATCH COLOR + SHAPE. Tap the golden switches."
 	coach_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	coach_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	coach_label.custom_minimum_size = Vector2(0, 52)
-	coach_label.add_theme_font_size_override("font_size", 16)
-	coach_label.add_theme_color_override("font_color", Color("#ffe0a7"))
-	coach_row.add_child(coach_label)
-	guide_button = Button.new()
-	guide_button.text = "GUIDE ON"
-	guide_button.custom_minimum_size = Vector2(106, 52)
-	guide_button.pressed.connect(_on_guide_pressed)
-	coach_row.add_child(guide_button)
+	coach_label.custom_minimum_size = Vector2(0, 36)
+	ParcelTheme.label_style(coach_label, 16, ParcelTheme.GOLD_LIGHT)
+	coach_margin.add_child(coach_label)
 
 	hint_label = Label.new()
 	hint_label.text = "Tap the golden junctions to switch tracks."
 	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hint_label.add_theme_font_size_override("font_size", 16)
-	hint_label.add_theme_color_override("font_color", Color("#c5d8e9"))
+	ParcelTheme.label_style(hint_label, 14, ParcelTheme.MUTED)
 	column.add_child(hint_label)
 
-	var actions := GridContainer.new()
-	actions.columns = 2
-	actions.add_theme_constant_override("h_separation", 8)
-	actions.add_theme_constant_override("v_separation", 8)
-	column.add_child(actions)
-	play_button = _make_button(actions, "PLAY")
-	pause_button = _make_button(actions, "PAUSE")
-	restart_button = _make_button(actions, "RETRY")
-	exit_button = _make_button(actions, "EXIT")
-	play_button.pressed.connect(_on_play_pressed)
-	pause_button.pressed.connect(_on_pause_pressed)
-	restart_button.pressed.connect(_on_restart_pressed)
-	exit_button.pressed.connect(_on_exit_pressed)
+	action_bar = ACTION_BAR_SCENE.instantiate() as ActionBar
+	column.add_child(action_bar)
+	# Legacy aliases remain available to old callers, but this is one
+	# primary action whose meaning depends on the current shift phase.
+	play_button = action_bar.primary_button
+	pause_button = action_bar.primary_button
+	restart_button = action_bar.retry_button
+	guide_button = action_bar.guide_button
+	exit_button = action_bar.exit_button
+	action_bar.primary_requested.connect(_on_primary_pressed)
+	action_bar.retry_requested.connect(_on_restart_pressed)
+	action_bar.guide_requested.connect(_on_guide_pressed)
+	action_bar.exit_requested.connect(_on_exit_pressed)
 
 	result_backdrop = ColorRect.new()
 	result_backdrop.color = Color(0.02, 0.04, 0.09, 0.79)
@@ -175,35 +190,6 @@ func _build_interface() -> void:
 	_center_result()
 
 
-func _make_stat(parent: HBoxContainer) -> Label:
-	var label := Label.new()
-	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 16)
-	label.add_theme_color_override("font_color", Color("#edf4ff"))
-	parent.add_child(label)
-	return label
-
-
-func _make_button(parent: GridContainer, caption: String) -> Button:
-	var button := Button.new()
-	button.text = caption
-	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	button.custom_minimum_size = Vector2(0, 58)
-	button.add_theme_font_size_override("font_size", 17)
-	parent.add_child(button)
-	return button
-
-
-func _panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#102238")
-	style.border_color = Color("#48627c")
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(16)
-	return style
-
-
 func _center_result() -> void:
 	if result_panel == null or result_backdrop == null:
 		return
@@ -217,7 +203,7 @@ func _center_result() -> void:
 
 func _on_guide_pressed() -> void:
 	guide_enabled = not guide_enabled
-	guide_button.text = "GUIDE ON" if guide_enabled else "GUIDE OFF"
+	action_bar.set_guide_enabled(guide_enabled)
 	_last_guidance = ""
 	_update_guidance()
 
@@ -239,6 +225,14 @@ func _update_guidance() -> void:
 		coach_label.text = message
 		_last_guidance = message
 	board_view.set_guide_focus(focus, needs_action)
+
+
+func _on_primary_pressed() -> void:
+	match controller.phase:
+		ShiftController.Phase.READY:
+			_on_play_pressed()
+		ShiftController.Phase.RUNNING, ShiftController.Phase.PAUSED:
+			_on_pause_pressed()
 
 
 func _on_play_pressed() -> void:
@@ -270,19 +264,13 @@ func _on_phase_changed(new_phase: int) -> void:
 			hint_label.text = "Paused. Routes and parcels are frozen."
 		ShiftController.Phase.FINISHED:
 			hint_label.text = "Shift over. Review your deliveries."
-	play_button.disabled = new_phase != ShiftController.Phase.READY
-	pause_button.disabled = new_phase == ShiftController.Phase.READY or new_phase == ShiftController.Phase.FINISHED
-	restart_button.disabled = new_phase == ShiftController.Phase.READY
-	exit_button.disabled = new_phase == ShiftController.Phase.READY
-	pause_button.text = "RESUME" if new_phase == ShiftController.Phase.PAUSED else "PAUSE"
+	action_bar.apply_phase(new_phase)
 	board_view.queue_redraw()
 	_update_guidance()
 
 
 func _on_totals_changed(new_score: int, delivered: int, errors: int) -> void:
-	progress_label.text = "✓ %d / %d" % [delivered, ShiftController.REQUIRED_DELIVERIES]
-	score_label.text = "%d PTS" % new_score
-	mistakes_label.text = "✕ %d / %d" % [errors, ShiftController.MAX_MISTAKES]
+	hud_panel.update_stats(delivered, new_score, errors)
 
 
 func _on_delivery_scored(_parcel: DeliveryParcel, matched: bool) -> void:
