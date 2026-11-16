@@ -10,6 +10,9 @@ const MISTAKE_COLOR: Color = Color("#FF8291")
 const TAP_COLOR: Color = Color("#FFD778")
 
 var effects: Array[Dictionary] = []
+var reduced_motion: bool = false
+var _draw_accumulator: float = 0.0
+const VISUAL_FRAME_STEP: float = 1.0 / 30.0
 
 
 func _ready() -> void:
@@ -20,7 +23,9 @@ func _ready() -> void:
 func show_junction(node_id: String) -> void:
 	if not BoardState.JUNCTION_IDS.has(node_id):
 		return
-	_append_effect("tap", node_id)
+	# Junction state still changes and audio still plays; omit the ripple.
+	if not reduced_motion:
+		_append_effect("tap", node_id)
 
 
 func show_delivery(parcel: DeliveryParcel, matched: bool) -> void:
@@ -34,6 +39,7 @@ func show_delivery(parcel: DeliveryParcel, matched: bool) -> void:
 
 func clear_effects() -> void:
 	effects.clear()
+	_draw_accumulator = 0.0
 	queue_redraw()
 
 
@@ -59,7 +65,10 @@ func _process(delta: float) -> void:
 		else:
 			effect["elapsed"] = elapsed
 			effects[index] = effect
-	queue_redraw()
+	_draw_accumulator += maxf(delta, 0.0)
+	if _draw_accumulator >= VISUAL_FRAME_STEP:
+		_draw_accumulator = fposmod(_draw_accumulator, VISUAL_FRAME_STEP)
+		queue_redraw()
 
 
 func _draw() -> void:
@@ -70,10 +79,12 @@ func _draw() -> void:
 	for effect in effects:
 		var elapsed: float = float(effect["elapsed"])
 		var fraction: float = clampf(elapsed / EFFECT_LIFETIME, 0.0, 1.0)
-		var fade: float = 1.0 - fraction
+		var fade: float = 1.0 if reduced_motion else 1.0 - fraction
 		var anchor: Vector2 = CityBoardGeometry.node_point(str(effect["node"]), size)
 		var kind: String = str(effect["kind"])
 		if kind == "tap":
+			if reduced_motion:
+				continue
 			var radius: float = (27.0 + fraction * 31.0) * scale_factor
 			var ring: Color = TAP_COLOR
 			ring.a = fade * 0.75
@@ -82,7 +93,8 @@ func _draw() -> void:
 		var tint: Color = SUCCESS_COLOR if kind == "success" else MISTAKE_COLOR
 		tint.a = fade
 		var label: String = "+100" if kind == "success" else "MISROUTE!"
-		var position: Vector2 = anchor + Vector2(0.0, (-35.0 - fraction * 33.0) * scale_factor)
+		var rise: float = 0.0 if reduced_motion else fraction * 33.0
+		var position: Vector2 = anchor + Vector2(0.0, (-35.0 - rise) * scale_factor)
 		var font_size: int = maxi(14, roundi((22.0 if kind == "success" else 16.0) * scale_factor))
 		# Soft dark outline keeps the counter legible over houses and roads.
 		draw_string_outline(
@@ -90,6 +102,7 @@ func _draw() -> void:
 			font_size, 4, Color(0.02, 0.08, 0.12, fade * 0.9)
 		)
 		draw_string(font, position, label, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, tint)
-		var halo: Color = tint
-		halo.a *= 0.30
-		draw_arc(anchor, (18.0 + fraction * 19.0) * scale_factor, 0.0, TAU, 30, halo, 3.0 * scale_factor, true)
+		if not reduced_motion:
+			var halo: Color = tint
+			halo.a *= 0.30
+			draw_arc(anchor, (18.0 + fraction * 19.0) * scale_factor, 0.0, TAU, 30, halo, 3.0 * scale_factor, true)

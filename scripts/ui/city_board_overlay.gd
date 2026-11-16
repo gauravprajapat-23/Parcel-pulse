@@ -7,6 +7,9 @@ var controller: ShiftController
 var guide_focus: String = ""
 var guide_needs_action: bool = false
 var route_flow_phase: float = 0.0
+var reduced_motion: bool = false
+var _draw_accumulator: float = 0.0
+const VISUAL_FRAME_STEP: float = 1.0 / 30.0
 
 const COLOR_RED: Color = Color("#FF738C")
 const COLOR_BLUE: Color = Color("#5CC8FF")
@@ -15,11 +18,25 @@ const GOLD: Color = Color("#FFD16B")
 const INK: Color = Color("#123046")
 
 
+func set_reduced_motion(enabled: bool) -> void:
+	reduced_motion = enabled
+	if enabled:
+		route_flow_phase = 0.0
+	_draw_accumulator = 0.0
+	queue_redraw()
+
+
 func advance_visual(delta: float) -> void:
 	if controller == null or controller.phase != ShiftController.Phase.RUNNING:
 		return
-	route_flow_phase = fposmod(route_flow_phase + maxf(delta, 0.0) * 0.22, 1.0)
-	queue_redraw()
+	var step: float = maxf(delta, 0.0)
+	# Accessibility: keep the carts updating, but remove decorative motion.
+	if not reduced_motion:
+		route_flow_phase = fposmod(route_flow_phase + step * 0.22, 1.0)
+	_draw_accumulator += step
+	if _draw_accumulator >= VISUAL_FRAME_STEP:
+		_draw_accumulator = fposmod(_draw_accumulator, VISUAL_FRAME_STEP)
+		queue_redraw()
 
 
 func _ready() -> void:

@@ -253,6 +253,11 @@ func _apply_responsive_layout(logical_size: Vector2) -> void:
 	screen_margins.add_theme_constant_override("margin_top", top + roundi(safe.y))
 	screen_margins.add_theme_constant_override("margin_bottom", bottom + roundi(safe.w))
 	screen_column.add_theme_constant_override("separation", int(metrics["gap"]))
+	header_row.add_theme_constant_override(
+		"separation", 4 if MobileLayout.profile_for(logical_size) != MobileLayout.FULL else 7
+	)
+	motion_button.custom_minimum_size.x = 82.0 if MobileLayout.profile_for(logical_size) != MobileLayout.FULL else 98.0
+	sound_button.custom_minimum_size.x = 64.0 if MobileLayout.profile_for(logical_size) != MobileLayout.FULL else 76.0
 	ParcelTheme.label_style(title_parcel, int(metrics["title"]), ParcelTheme.TEXT)
 	ParcelTheme.label_style(title_pulse, int(metrics["title"]), ParcelTheme.GOLD)
 	tagline_label.visible = bool(metrics["subtitle"])

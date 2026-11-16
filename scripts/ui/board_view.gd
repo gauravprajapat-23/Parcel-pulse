@@ -12,6 +12,7 @@ var guide_needs_action: bool = false
 var city_art: CityBoardArt
 var dynamic_layer: CityBoardOverlay
 var juice_layer: GameJuice
+var reduced_motion: bool = false
 
 
 func bind_controller(value: ShiftController) -> void:
@@ -59,10 +60,25 @@ func _ready() -> void:
 
 	juice_layer = GameJuice.new()
 	juice_layer.name = "FeedbackOverlay"
+	juice_layer.reduced_motion = reduced_motion
+	dynamic_layer.reduced_motion = reduced_motion
 	juice_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(juice_layer)
 	juice_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
 	resized.connect(_on_board_resized)
+
+
+func set_reduced_motion(enabled: bool) -> void:
+	reduced_motion = enabled
+	if dynamic_layer != null:
+		dynamic_layer.set_reduced_motion(enabled)
+	if juice_layer != null:
+		juice_layer.reduced_motion = enabled
+		juice_layer.queue_redraw()
+
+
+func get_junction_hit_radius() -> float:
+	return minf(72.0, maxf(48.0, minf(size.x, size.y) * 0.13))
 
 
 func _on_board_resized() -> void:
@@ -135,7 +151,7 @@ func _gui_input(event: InputEvent) -> void:
 func toggle_at_local_position(local_position: Vector2) -> bool:
 	if controller == null or controller.phase != ShiftController.Phase.RUNNING:
 		return false
-	var radius: float = minf(72.0, maxf(48.0, minf(size.x, size.y) * 0.13))
+	var radius: float = get_junction_hit_radius()
 	var nearest_id: String = ""
 	var best_distance: float = INF
 	for junction_id in BoardState.JUNCTION_IDS:
