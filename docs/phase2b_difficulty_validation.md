@@ -30,11 +30,11 @@ The routing graph remains deterministic. The mistake limit remains three; moneti
 
 A separate source-data simulation (not Godot) checked that each of the five stage schedules can reach its actual quota with zero mistakes when an ideal routing player chooses legal routes. This confirms logical feasibility under one test strategy, **not** measured human difficulty or native-engine correctness.
 
-The headless suite \`tests/test_phase2b_progression.gd\` attempts a full, real-controller run for all five stages at a physics-sized time step, with no synthetic score changes. It also checks difficulty increments, stored records, locked-stage guards, result NEXT navigation and a saved returning-player session.
+The headless suite `tests/test_phase2b_progression.gd` attempts a full, real-controller run for all five stages at a physics-sized time step, with no synthetic score changes. It also checks difficulty increments, stored records, locked-stage guards, result NEXT navigation and a saved returning-player session.
 
 ## Run on Windows
 
-\`\`\`powershell
+```powershell
 cd "C:\Users\gauravp\Projects\Parcel-pulse"
 git switch main
 git pull --ff-only origin main
@@ -49,7 +49,7 @@ $godot = "C:\Godot\Godot_v4.7.2-stable_win64_console.exe"
 
 # After configuring Android export templates and SDK:
 .\tools\build_android_debug.ps1 -GodotExe $godot
-\`\`\`
+```
 
 The build script exits on failure and does not invoke GitHub Actions.
 

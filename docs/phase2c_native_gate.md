@@ -59,6 +59,20 @@ adb shell screencap -p /sdcard/parcel-pulse-phase2c.png
 adb pull /sdcard/parcel-pulse-phase2c.png .
 ~~~
 
+## Independent source-data balance baseline
+
+These figures come from a separate simplified JavaScript replay of the bundled graph, schedule and 1.06-second segment timing. They are NOT results from Godot and do not measure players.
+
+| Map | Approx. guided clear | Peak parcels in flight | Mistakes | Routing changes |
+| --- | ---: | ---: | ---: | ---: |
+| Old Town | 30.1 s | 2 | 0 | 13 |
+| Mirror Market | 30.8 s | 2 | 0 | 15 |
+| Canal Crossing | 32.2 s | 2 | 0 | 14 |
+| Riverside Switch | 32.6 s | 3 | 0 | 19 |
+| Beacon Docks | 35.0 s | 3 | 0 | 21 |
+
+All five reach their quotas in this specific guided model. A real Godot run, human reaction-time measurements and phone touch tests are still required.
+
 ## Evidence to retain
 
 | Gate | Evidence | Current status |

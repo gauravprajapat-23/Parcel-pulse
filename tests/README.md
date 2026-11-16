@@ -1,4 +1,4 @@
-# Parcel Pulse — Phase 1 verification
+# Parcel Pulse — Complete regression verification
 
 ## Requirements
 
