@@ -20,6 +20,7 @@ var progress_profile: Dictionary = {}
 var progress_save_path: String = ProgressStore.SAVE_PATH
 var level_row: HBoxContainer
 var level_name_label: Label
+var level_info_label: Label
 var previous_level_button: Button
 var next_level_button: Button
 var _last_guidance: String = ""
@@ -51,6 +52,11 @@ const ANDROID_BACK_DEBOUNCE_MS: int = 300
 func _ready() -> void:
 	_build_interface()
 	progress_profile = ProgressStore.load_profile(progress_save_path)
+	# Returning players see the first unlocked uncleared level instead of
+	# restarting at Stage 1 every time the app opens.
+	var suggested_level: int = ProgressStore.recommended_level(progress_profile)
+	if suggested_level > 0:
+		controller.select_level(suggested_level)
 	controller.phase_changed.connect(_on_phase_changed)
 	controller.level_changed.connect(_on_level_changed)
 	controller.totals_changed.connect(_on_totals_changed)
@@ -176,12 +182,22 @@ func _build_interface() -> void:
 	ParcelTheme.style_button(previous_level_button, "quiet")
 	previous_level_button.pressed.connect(_on_previous_level)
 	level_row.add_child(previous_level_button)
+	var stage_center := VBoxContainer.new()
+	stage_center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stage_center.add_theme_constant_override("separation", 1)
+	level_row.add_child(stage_center)
 	level_name_label = Label.new()
-	level_name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	level_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	level_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	level_name_label.clip_text = true
 	ParcelTheme.label_style(level_name_label, 15, ParcelTheme.GOLD_LIGHT)
-	level_row.add_child(level_name_label)
+	stage_center.add_child(level_name_label)
+	level_info_label = Label.new()
+	level_info_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	level_info_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	level_info_label.clip_text = true
+	ParcelTheme.label_style(level_info_label, 11, ParcelTheme.MUTED)
+	stage_center.add_child(level_info_label)
 	next_level_button = Button.new()
 	next_level_button.text = "▶"
 	next_level_button.custom_minimum_size = Vector2(50, 42)
@@ -256,6 +272,7 @@ func _build_interface() -> void:
 	result_backdrop.add_child(result_panel)
 	result_panel.retry_requested.connect(_on_restart_pressed)
 	result_panel.menu_requested.connect(_on_exit_pressed)
+	result_panel.next_stage_requested.connect(_on_result_next_stage)
 	result_backdrop.resized.connect(_center_result)
 	_center_result()
 
@@ -302,6 +319,9 @@ func _apply_responsive_layout(logical_size: Vector2) -> void:
 	coach_label.custom_minimum_size = Vector2(0, float(metrics["coach_height"]))
 	level_name_label.add_theme_font_size_override(
 		"font_size", 12 if MobileLayout.profile_for(logical_size) == MobileLayout.SMALL else 15
+	)
+	level_info_label.add_theme_font_size_override(
+		"font_size", 10 if MobileLayout.profile_for(logical_size) == MobileLayout.SMALL else 11
 	)
 	previous_level_button.custom_minimum_size.y = float(metrics["action_height"])
 	next_level_button.custom_minimum_size.y = float(metrics["action_height"])
@@ -361,6 +381,14 @@ func _select_preview_level(index: int) -> void:
 		_update_guidance()
 
 
+func _on_result_next_stage() -> void:
+	var target: int = controller.level_index + 1
+	if target >= LevelCatalog.count() or not ProgressStore.is_unlocked(progress_profile, target):
+		return
+	_on_exit_pressed()
+	_select_preview_level(target)
+
+
 func _on_level_changed(_index: int) -> void:
 	_update_level_selection()
 	_update_guidance()
@@ -372,15 +400,26 @@ func _update_level_selection() -> void:
 	var index: int = controller.level_index
 	var definition: Dictionary = LevelCatalog.get_level(index)
 	var unlocked: bool = ProgressStore.is_unlocked(progress_profile, index)
-	var label_text: String = "STAGE %02d · %s" % [index + 1, str(definition.get("name", "Unknown"))]
 	var best: Dictionary = progress_profile.get("best", {})
 	var record: Dictionary = best.get(str(index), {})
-	if not unlocked:
-		label_text += "  [LOCKED]"
-	elif int(record.get("stars", 0)) > 0:
-		label_text += "  " + "★".repeat(int(record["stars"]))
-	level_name_label.text = label_text
+	level_name_label.text = "STAGE %02d/%02d · %s" % [
+		index + 1, LevelCatalog.count(), str(definition.get("name", "Unknown"))
+	]
 	level_name_label.tooltip_text = str(definition.get("tagline", ""))
+	var completed: int = ProgressStore.completed_count(progress_profile)
+	if not unlocked:
+		level_info_label.text = "LOCKED · CLEAR STAGE %02d" % index
+	elif int(record.get("stars", 0)) > 0:
+		level_info_label.text = "%s  BEST %d  ·  %d/%d CLEARED" % [
+			"★".repeat(int(record["stars"])),
+			int(record.get("score", 0)), completed, LevelCatalog.count()
+		]
+	else:
+		level_info_label.text = "%s  ·  %d TO DELIVER  ·  %d/%d CLEARED" % [
+			LevelCatalog.difficulty_text(index),
+			int(definition.get("quota", 12)), completed, LevelCatalog.count()
+		]
+	level_info_label.tooltip_text = str(definition.get("tagline", ""))
 	previous_level_button.disabled = index <= 0
 	next_level_button.disabled = index >= LevelCatalog.count() - 1
 	level_row.visible = controller.phase == ShiftController.Phase.READY
@@ -388,13 +427,11 @@ func _update_level_selection() -> void:
 		if unlocked:
 			action_bar.primary_button.configure("PLAY", "play", "gold")
 			action_bar.primary_button.disabled = false
+			hint_label.text = str(definition.get("tagline", ""))
 		else:
 			action_bar.primary_button.configure("LOCKED", "play", "quiet")
 			action_bar.primary_button.disabled = true
-		if not unlocked:
-			hint_label.text = "Complete earlier stages to unlock this map."
-		else:
-			hint_label.text = str(definition.get("tagline", ""))
+			hint_label.text = "Win Stage %d to unlock this map." % index
 
 
 func _on_sound_toggle_pressed() -> void:
@@ -512,13 +549,20 @@ func _on_delivery_scored(parcel: DeliveryParcel, matched: bool) -> void:
 
 
 func _on_shift_finished(success: bool, earned_score: int, delivered: int, errors: int) -> void:
-	result_panel.show_result(success, earned_score, delivered, errors, controller.required_deliveries)
 	if success:
 		progress_profile = ProgressStore.record_win(
 			progress_profile, controller.level_index, earned_score, errors
 		)
 		if not ProgressStore.save_profile(progress_profile, progress_save_path):
 			push_warning("Parcel Pulse progression could not be saved on this device.")
+	var next_index: int = controller.level_index + 1
+	var next_available: bool = success and ProgressStore.is_unlocked(
+		progress_profile, next_index
+	)
+	result_panel.show_result(
+		success, earned_score, delivered, errors, controller.required_deliveries,
+		next_available
+	)
 	result_backdrop.visible = true
 	result_backdrop.modulate.a = 1.0 if reduced_motion else 0.0
 	_center_result()
