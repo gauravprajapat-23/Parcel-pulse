@@ -12,6 +12,7 @@ A small, original, offline-first parcel-routing game built with **Godot 4.x / GD
 - Local state only: no backend, no accounts, no third-party assets, no ads, no subscriptions.
 - An optional read-only routing guide highlights the next junction and shows TAP vs READY instructions.
 - UI-01A reusable neon theme, three compact HUD cards, and a four-button action bar (PLAY/PAUSE/RESUME, RETRY, GUIDE, EXIT).
+- UI-01B procedural night city with three destination houses, depot, curved neon roads, greenery, gold junctions, and animated-position parcel carts.
 - Dependency-free GDScript regression tests.
 
 ## Run locally
@@ -30,9 +31,10 @@ godot --headless --path . --script res://tests/test_phase1.gd
 godot --headless --path . --script res://tests/test_ui_smoke.gd
 godot --headless --path . --script res://tests/test_guidance.gd
 godot --headless --path . --script res://tests/test_ui_design.gd
+godot --headless --path . --script res://tests/test_ui_city_board.gd
 ```
 
-Read the [UI-01A design system](docs/ui_01a_design_system.md) for reusable components and its validation checklist. Read [tests/README.md](tests/README.md) for Windows commands and a physical Android smoke-test checklist. The [first-session validation plan](docs/first_session_validation.md) covers the guided tutorial and player comprehension test. The Android debug APK script and preset are documented in [docs/android_verification.md](docs/android_verification.md).
+Read the [UI-01B city board guide](docs/ui_01b_city_board.md) and [UI-01A design system](docs/ui_01a_design_system.md) for reusable components and its validation checklist. Read [tests/README.md](tests/README.md) for Windows commands and a physical Android smoke-test checklist. The [first-session validation plan](docs/first_session_validation.md) covers the guided tutorial and player comprehension test. The Android debug APK script and preset are documented in [docs/android_verification.md](docs/android_verification.md).
 
 ## How to play
 

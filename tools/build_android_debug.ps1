@@ -30,6 +30,7 @@ Invoke-Godot -Step 'Core regression suite' -Arguments @('--headless', '--path', 
 Invoke-Godot -Step 'UI regression suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_ui_smoke.gd')
 Invoke-Godot -Step 'Routing guide suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_guidance.gd')
 Invoke-Godot -Step 'UI-01A design suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_ui_design.gd')
+Invoke-Godot -Step 'UI-01B city board suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_ui_city_board.gd')
 Invoke-Godot -Step 'Android debug APK export' -Arguments @('--headless', '--path', $project, '--export-debug', 'Android', $apk)
 
 if (!(Test-Path -LiteralPath $apk -PathType Leaf)) {
