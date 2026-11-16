@@ -63,8 +63,8 @@ func _exercise_map(level_index: int) -> void:
 	var first_junction: String = str(controller.board.junction_ids[0])
 	var position: Vector2 = view._point(first_junction)
 	var initial: String = controller.board.get_next_node(first_junction)
-	var events: int = 0
-	view.junction_activated.connect(func(_id: String) -> void: events += 1)
+	var events: Array[int] = [0]
+	view.junction_activated.connect(func(_id: String) -> void: events[0] += 1)
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true
@@ -72,7 +72,7 @@ func _exercise_map(level_index: int) -> void:
 	view._gui_input(press)
 	var toggled: String = controller.board.get_next_node(first_junction)
 	_check("stage %d: one press changes only the chosen junction" % level_index,
-		toggled != initial and events == 1)
+		toggled != initial and events[0] == 1)
 	var release := InputEventMouseButton.new()
 	release.button_index = MOUSE_BUTTON_LEFT
 	release.pressed = false
@@ -90,6 +90,6 @@ func _exercise_map(level_index: int) -> void:
 	controller.set_paused(false)
 	view._gui_input(press)
 	_check("stage %d: a second actual press toggles back once" % level_index,
-		controller.board.get_next_node(first_junction) == initial and events == 2)
+		controller.board.get_next_node(first_junction) == initial and events[0] == 2)
 	view.queue_free()
 	await process_frame
