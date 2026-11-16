@@ -57,16 +57,18 @@ func _append_effect(kind: String, node_id: String) -> void:
 func _process(delta: float) -> void:
 	if effects.is_empty():
 		return
+	var removed_effect: bool = false
 	for index in range(effects.size() - 1, -1, -1):
 		var effect: Dictionary = effects[index]
 		var elapsed: float = float(effect["elapsed"]) + maxf(delta, 0.0)
 		if elapsed >= EFFECT_LIFETIME:
 			effects.remove_at(index)
+			removed_effect = true
 		else:
 			effect["elapsed"] = elapsed
 			effects[index] = effect
 	_draw_accumulator += maxf(delta, 0.0)
-	if _draw_accumulator >= VISUAL_FRAME_STEP:
+	if removed_effect or _draw_accumulator >= VISUAL_FRAME_STEP:
 		_draw_accumulator = fposmod(_draw_accumulator, VISUAL_FRAME_STEP)
 		queue_redraw()
 
