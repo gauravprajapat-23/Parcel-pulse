@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/hud_panel.gd" id="1_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/stat_card.tscn" id="2_card"]
+
+[node name="HudPanel" type="HBoxContainer"]
+theme_override_constants/separation = 7
+script = ExtResource("1_hud")
+
+[node name="Deliveries" parent="." instance=ExtResource("2_card")]
+
+[node name="Score" parent="." instance=ExtResource("2_card")]
+
+[node name="Lives" parent="." instance=ExtResource("2_card")]

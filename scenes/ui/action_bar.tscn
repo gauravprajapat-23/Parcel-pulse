@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/action_bar.gd" id="1_actions"]
+[ext_resource type="PackedScene" path="res://scenes/ui/action_button.tscn" id="2_button"]
+
+[node name="ActionBar" type="GridContainer"]
+columns = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+script = ExtResource("1_actions")
+
+[node name="Primary" parent="." instance=ExtResource("2_button")]
+
+[node name="Retry" parent="." instance=ExtResource("2_button")]
+
+[node name="Guide" parent="." instance=ExtResource("2_button")]
+
+[node name="Exit" parent="." instance=ExtResource("2_button")]

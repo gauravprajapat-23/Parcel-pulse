@@ -1,0 +1,38 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/stat_card.gd" id="1_stat"]
+
+[node name="StatCard" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 76)
+size_flags_horizontal = 3
+script = ExtResource("1_stat")
+
+[node name="Inner" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 9
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 9
+
+[node name="Row" type="HBoxContainer" parent="Inner"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Glyph" type="Label" parent="Inner/Row"]
+custom_minimum_size = Vector2(25, 0)
+layout_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Column" type="VBoxContainer" parent="Inner/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+
+[node name="Value" type="Label" parent="Inner/Row/Column"]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Caption" type="Label" parent="Inner/Row/Column"]
+layout_mode = 2
+horizontal_alignment = 1
