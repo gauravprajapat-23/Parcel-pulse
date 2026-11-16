@@ -166,17 +166,39 @@ func _gui_input(event: InputEvent) -> void:
 		accept_event()
 
 
+const AMBIGUOUS_TOUCH_MARGIN: float = 8.0
+
+
+func junction_at_local_position(local_position: Vector2) -> String:
+	# Use the closest real junction even when large touch circles overlap.
+	# Reject the thin region where two switches are equally plausible,
+	# rather than silently toggling a different switch on a small phone.
+	if controller == null or size.x <= 0.0 or size.y <= 0.0:
+		return ""
+	if not Rect2(Vector2.ZERO, size).has_point(local_position):
+		return ""
+	var nearest_id: String = ""
+	var nearest_distance: float = INF
+	var second_distance: float = INF
+	for junction_id in controller.board.junction_ids:
+		var distance: float = local_position.distance_to(_point(junction_id))
+		if distance < nearest_distance:
+			second_distance = nearest_distance
+			nearest_distance = distance
+			nearest_id = junction_id
+		elif distance < second_distance:
+			second_distance = distance
+	if nearest_distance > get_junction_hit_radius():
+		return ""
+	if second_distance - nearest_distance < AMBIGUOUS_TOUCH_MARGIN:
+		return ""
+	return nearest_id
+
+
 func toggle_at_local_position(local_position: Vector2) -> bool:
 	if controller == null or controller.phase != ShiftController.Phase.RUNNING:
 		return false
-	var radius: float = get_junction_hit_radius()
-	var nearest_id: String = ""
-	var best_distance: float = INF
-	for junction_id in controller.board.junction_ids:
-		var distance: float = local_position.distance_to(_point(junction_id))
-		if distance <= radius and distance < best_distance:
-			nearest_id = junction_id
-			best_distance = distance
+	var nearest_id: String = junction_at_local_position(local_position)
 	if nearest_id.is_empty():
 		return false
 	if not controller.toggle_junction(nearest_id):
