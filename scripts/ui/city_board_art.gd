@@ -153,6 +153,8 @@ func _draw_destinations() -> void:
 func _draw_house(node_id: String, accent: Color) -> void:
 	var s: float = _scale()
 	var center: Vector2 = CityBoardGeometry.node_point(node_id, size, board) + Vector2(0, -21) * s
+	# Keep the roof (57*s above center) inside the clip area on short phones.
+	center.y = maxf(center.y, 61.0 * s)
 	var half_width: float = 33.0 * s
 	var top: float = center.y - 26.0 * s
 	var front: Rect2 = Rect2(
