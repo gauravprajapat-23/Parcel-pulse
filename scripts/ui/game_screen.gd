@@ -108,25 +108,25 @@ func _build_interface() -> void:
 	screen_margins.add_theme_constant_override("margin_right", 16)
 	screen_margins.add_theme_constant_override("margin_top", 20)
 	screen_margins.add_theme_constant_override("margin_bottom", 18)
-	add_child(margins)
+	add_child(screen_margins)
 
 	screen_column = VBoxContainer.new()
 	screen_column.add_theme_constant_override("separation", 10)
-	screen_margins.add_child(column)
+	screen_margins.add_child(screen_column)
 
 	# UI-01A: brand typography and stat cards share one palette.
 	header_row = HBoxContainer.new()
 	header_row.add_theme_constant_override("separation", 7)
 	header_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	screen_column.add_child(title_row)
+	screen_column.add_child(header_row)
 	title_parcel = Label.new()
 	title_parcel.text = "PARCEL"
-	ParcelTheme.label_style(parcel_title, 30, ParcelTheme.TEXT)
-	header_row.add_child(parcel_title)
+	ParcelTheme.label_style(title_parcel, 30, ParcelTheme.TEXT)
+	header_row.add_child(title_parcel)
 	title_pulse = Label.new()
 	title_pulse.text = "PULSE"
-	ParcelTheme.label_style(pulse_title, 30, ParcelTheme.GOLD)
-	header_row.add_child(pulse_title)
+	ParcelTheme.label_style(title_pulse, 30, ParcelTheme.GOLD)
+	header_row.add_child(title_pulse)
 	sound_button = Button.new()
 	sound_button.text = "SFX ON"
 	sound_button.custom_minimum_size = Vector2(76, 44)
@@ -145,8 +145,8 @@ func _build_interface() -> void:
 	tagline_label = Label.new()
 	tagline_label.text = "ROUTE  •  DELIVER  •  KEEP THE CITY MOVING"
 	tagline_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	ParcelTheme.label_style(subtitle, 12, ParcelTheme.CYAN)
-	screen_column.add_child(subtitle)
+	ParcelTheme.label_style(tagline_label, 12, ParcelTheme.CYAN)
+	screen_column.add_child(tagline_label)
 
 	hud_panel = HUD_SCENE.instantiate() as HudPanel
 	screen_column.add_child(hud_panel)
@@ -160,7 +160,7 @@ func _build_interface() -> void:
 	board_container.add_theme_stylebox_override(
 		"panel", ParcelTheme.panel_style(ParcelTheme.PANEL, ParcelTheme.BORDER, 22, 2)
 	)
-	screen_column.add_child(board_panel)
+	screen_column.add_child(board_container)
 
 	board_view = BoardView.new()
 	board_view.custom_minimum_size = Vector2(260, 340)
@@ -175,7 +175,7 @@ func _build_interface() -> void:
 	coach_container.add_theme_stylebox_override(
 		"panel", ParcelTheme.panel_style(ParcelTheme.PANEL, ParcelTheme.BORDER, 16, 1)
 	)
-	screen_column.add_child(coach_panel)
+	screen_column.add_child(coach_container)
 	var coach_margin := MarginContainer.new()
 	coach_margin.add_theme_constant_override("margin_left", 12)
 	coach_margin.add_theme_constant_override("margin_right", 12)
@@ -260,7 +260,7 @@ func _apply_responsive_layout(logical_size: Vector2) -> void:
 	sound_button.custom_minimum_size.x = 64.0 if MobileLayout.profile_for(logical_size) != MobileLayout.FULL else 76.0
 	ParcelTheme.label_style(title_parcel, int(metrics["title"]), ParcelTheme.TEXT)
 	ParcelTheme.label_style(title_pulse, int(metrics["title"]), ParcelTheme.GOLD)
-	tagline_label.visible = bool(metrics["subtitle"])
+	tagline_label.visible = bool(metrics["tagline_label"])
 	hud_panel.apply_layout_metrics(int(metrics["stats_height"]))
 	board_view.custom_minimum_size = metrics["board"]
 	ParcelTheme.label_style(coach_label, int(metrics["coach_font"]), ParcelTheme.GOLD_LIGHT)
