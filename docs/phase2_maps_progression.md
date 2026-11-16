@@ -9,8 +9,8 @@
 | 1 | Old Town | Original three-junction board, with Red left / Blue middle / Green right | 12 | 2.45 s |
 | 2 | Mirror Market | Red and Green exchange sides; switch destination order changes | 13 | 2.30 s |
 | 3 | Canal Crossing | Adds a fourth switch (`upper`), extra junction path for Blue/Green | 14 | 2.15 s |
-| 4 | Riverside Switch | Reordered hub exits with a cross-branch route through upper | 15 | 2.05 s |
-| 5 | Beacon Docks | Five switches and two northern alternate paths | 16 | 1.98 s |
+| 4 | Riverside Switch | Reordered hub exits with a cross-branch route through upper | 15 | 2.10 s |
+| 5 | Beacon Docks | Five switches and two northern alternate paths | 16 | 2.05 s |
 
 All stages use the original offline one-touch mechanic, color+symbol destination identity, three-mistake limit and 100 points per correct delivery. Each stage has its own deterministic schedule with enough extra parcels to allow two mistakes before the completion quota becomes impossible. No ads, accounts, payments or backend.
 
@@ -67,9 +67,9 @@ For a debug APK, configure Godot Android export templates and Android SDK then r
 
 ## Required manual Android acceptance
 
-1. Start offline with a new save: Stage 1 playable, Stages 2 and 3 locked.
+1. Start offline with a new save: Stage 1 playable, Stages 2–5 locked.
 2. Preview each map before starting it. Verify the destination house positions, junction count and highlighted selected roads differ; the fourth switch on Stage 3 is tappable.
-3. Route parcels for correct deliveries; verify quota 12/13/14 displays on the HUD and game results.
+3. Route parcels for correct deliveries; verify quotas 12/13/14/15/16 display on the HUD and game results.
 4. Lose three times on Stage 1. Check Stage 2 remains locked.
 5. Win Stage 1; return to selection; start Stage 2. Check the best score and stars appear for Stage 1.
 6. Win Stage 2 and unlock Stage 3. Exit app, launch offline again and verify unlocks and records survive.

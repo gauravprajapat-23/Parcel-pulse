@@ -11,8 +11,8 @@ Five original, offline graph-based maps with independent routing, destination po
 | 1 | Old Town | Intro | 3 | 12 | 2.45 sec |
 | 2 | Mirror Market | Easy | 3 | 13 | 2.30 sec |
 | 3 | Canal Crossing | Moderate | 4 | 14 | 2.15 sec |
-| 4 | Riverside Switch | Tricky | 4 | 15 | 2.05 sec |
-| 5 | Beacon Docks | Expert | 5 | 16 | 1.98 sec |
+| 4 | Riverside Switch | Tricky | 4 | 15 | 2.10 sec (Phase 2C) |
+| 5 | Beacon Docks | Expert | 5 | 16 | 2.05 sec (Phase 2C) |
 
 The routing graph remains deterministic. The mistake limit remains three; monetization, multiplayer and accounts remain absent.
 

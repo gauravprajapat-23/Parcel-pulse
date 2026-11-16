@@ -9,7 +9,7 @@ schedules and quotas. Use the left/right arrows on the READY screen to preview
 stages. Winning unlocks the next stage and saves best scores/stars offline.
 A completed shift offers **NEXT** to select the newly unlocked map, and returning
 players resume at their first uncleared stage.
-Read [Phase 2 maps and progression](docs/phase2_maps_progression.md) and
+Read [Phase 2C native gate](docs/phase2c_native_gate.md), [Phase 2 maps and progression](docs/phase2_maps_progression.md) and
 [Phase 2B acceptance](docs/phase2b_difficulty_validation.md) for implementation
 and verification.
 
@@ -49,6 +49,7 @@ godot --headless --path . --script res://tests/test_ui_juice.gd
 godot --headless --path . --script res://tests/test_ui_responsive.gd
 godot --headless --path . --script res://tests/test_phase2_levels.gd
 godot --headless --path . --script res://tests/test_phase2b_progression.gd
+godot --headless --path . --script res://tests/test_phase2c_touch.gd
 ```
 
 Read the [UI-01D Android release gate](docs/ui_01d_android_release_gate.md), [UI-01C game feel guide](docs/ui_01c_game_feel.md) and [UI-01B city board guide](docs/ui_01b_city_board.md) and [UI-01A design system](docs/ui_01a_design_system.md) for reusable components and its validation checklist. Read [tests/README.md](tests/README.md) for Windows commands and a physical Android smoke-test checklist. The [first-session validation plan](docs/first_session_validation.md) covers the guided tutorial and player comprehension test. The Android debug APK script and preset are documented in [docs/android_verification.md](docs/android_verification.md).
@@ -79,4 +80,4 @@ The current build contains five maps, local progression and generated sound effe
 
 ## Recommended next milestone
 
-**Phase 2C — Native Godot regression, Android smoke tests, and observed difficulty tuning.** Fix any real engine errors, collect playtest evidence, then decide whether to add more levels.
+**Phase 2C is the current native/device verification gate.** Run the Godot suites, capture five-map screenshots, test Android junctions and resolve observed issues before expanding the game.
