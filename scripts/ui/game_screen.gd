@@ -129,16 +129,18 @@ func _build_interface() -> void:
 	header_row.add_child(title_pulse)
 	sound_button = Button.new()
 	sound_button.text = "SFX ON"
-	sound_button.custom_minimum_size = Vector2(76, 44)
+	sound_button.custom_minimum_size = Vector2(76, 48)
 	ParcelTheme.style_button(sound_button, "quiet")
 	sound_button.add_theme_font_size_override("font_size", 12)
+	sound_button.tooltip_text = "Toggle sound effects"
 	sound_button.pressed.connect(_on_sound_toggle_pressed)
 	header_row.add_child(sound_button)
 	motion_button = Button.new()
 	motion_button.text = "MOTION ON"
-	motion_button.custom_minimum_size = Vector2(98, 44)
+	motion_button.custom_minimum_size = Vector2(98, 48)
 	ParcelTheme.style_button(motion_button, "quiet")
 	motion_button.add_theme_font_size_override("font_size", 11)
+	motion_button.tooltip_text = "Toggle decorative motion and animations"
 	motion_button.pressed.connect(_on_motion_toggle_pressed)
 	header_row.add_child(motion_button)
 

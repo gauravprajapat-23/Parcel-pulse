@@ -94,13 +94,19 @@ func _test_responsive_scene() -> void:
 		is_equal_approx(game.action_bar.primary_button.custom_minimum_size.y, 56.0))
 	_check("small profile has compact stat cards",
 		is_equal_approx(game.hud_panel.deliveries_card.custom_minimum_size.y, 62.0))
+	_check("small profile avoids crowded HUD icons",
+		not game.hud_panel.deliveries_card.glyph_label.visible)
 	_check("narrow header shrinks secondary controls",
 		game.motion_button.custom_minimum_size.x <= 82.0)
 
 	game._apply_responsive_layout(Vector2(540, 960))
 	_check("full layout restores title tagline and HUD",
 		game.tagline_label.visible
-		and is_equal_approx(game.hud_panel.deliveries_card.custom_minimum_size.y, 76.0))
+		and is_equal_approx(game.hud_panel.deliveries_card.custom_minimum_size.y, 76.0)
+		and game.hud_panel.deliveries_card.glyph_label.visible)
+	_check("header toggles have at least 48px tap height",
+		game.motion_button.custom_minimum_size.y >= 48.0
+		and game.sound_button.custom_minimum_size.y >= 48.0)
 	_check("full layout restores generous action targets",
 		is_equal_approx(game.action_bar.primary_button.custom_minimum_size.y, 64.0))
 	_check("junction remains at least 48px tappable",
