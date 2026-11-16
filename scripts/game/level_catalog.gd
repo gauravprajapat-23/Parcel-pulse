@@ -106,7 +106,7 @@ const LEVELS = [
 		"palette": 3,
 		"difficulty": 4,
 		"quota": 15,
-		"spawn_interval": 2.05,
+		"spawn_interval": 2.10,
 		"nodes": {
 			"depot": Vector2(0.48, 0.90),
 			"hub": Vector2(0.48, 0.71),
@@ -139,7 +139,7 @@ const LEVELS = [
 		"palette": 4,
 		"difficulty": 5,
 		"quota": 16,
-		"spawn_interval": 1.98,
+		"spawn_interval": 2.05,
 		"nodes": {
 			"depot": Vector2(0.50, 0.91),
 			"hub": Vector2(0.50, 0.75),
