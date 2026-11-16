@@ -8,6 +8,7 @@ const DESTINATIONS = ["red", "blue", "green"]
 const LEVELS = [
 	{
 		"id": "old_town",
+		"difficulty": 1,
 		"name": "Old Town",
 		"tagline": "Learn the golden switches",
 		"palette": 0,
@@ -37,6 +38,7 @@ const LEVELS = [
 	},
 	{
 		"id": "mirror_market",
+		"difficulty": 2,
 		"name": "Mirror Market",
 		"tagline": "Destinations have switched sides",
 		"palette": 1,
@@ -66,6 +68,7 @@ const LEVELS = [
 	},
 	{
 		"id": "canal_crossing",
+		"difficulty": 3,
 		"name": "Canal Crossing",
 		"tagline": "A fourth junction changes everything",
 		"palette": 2,
@@ -96,7 +99,89 @@ const LEVELS = [
 			"blue", "green",
 		],
 	},
+	{
+		"id": "riverside_switch",
+		"name": "Riverside Switch",
+		"tagline": "Two approaches to the same houses",
+		"palette": 3,
+		"difficulty": 4,
+		"quota": 15,
+		"spawn_interval": 2.05,
+		"nodes": {
+			"depot": Vector2(0.48, 0.90),
+			"hub": Vector2(0.48, 0.71),
+			"west": Vector2(0.23, 0.49),
+			"east": Vector2(0.77, 0.46),
+			"upper": Vector2(0.50, 0.30),
+			"red": Vector2(0.12, 0.14),
+			"blue": Vector2(0.50, 0.12),
+			"green": Vector2(0.89, 0.14),
+		},
+		"edges": {
+			"depot": ["hub"],
+			"hub": ["east", "west"],
+			"west": ["upper", "red"],
+			"east": ["green", "upper"],
+			"upper": ["blue", "green"],
+		},
+		"defaults": {"hub": 1, "west": 1, "east": 0, "upper": 0},
+		"schedule": [
+			"blue", "red", "green", "blue", "green", "red",
+			"blue", "green", "red", "green", "blue", "red",
+			"blue", "red", "green", "blue", "green", "red",
+			"green", "blue", "red",
+		],
+	},
+	{
+		"id": "beacon_docks",
+		"name": "Beacon Docks",
+		"tagline": "Five junctions, one busy harbor",
+		"palette": 4,
+		"difficulty": 5,
+		"quota": 16,
+		"spawn_interval": 1.98,
+		"nodes": {
+			"depot": Vector2(0.50, 0.91),
+			"hub": Vector2(0.50, 0.75),
+			"west": Vector2(0.24, 0.57),
+			"east": Vector2(0.76, 0.57),
+			"north_west": Vector2(0.28, 0.36),
+			"north_east": Vector2(0.72, 0.36),
+			"red": Vector2(0.12, 0.12),
+			"blue": Vector2(0.50, 0.11),
+			"green": Vector2(0.88, 0.12),
+		},
+		"edges": {
+			"depot": ["hub"],
+			"hub": ["west", "east"],
+			"west": ["red", "north_west"],
+			"east": ["north_east", "green"],
+			"north_west": ["blue", "red"],
+			"north_east": ["green", "blue"],
+		},
+		"defaults": {
+			"hub": 0, "west": 0, "east": 1,
+			"north_west": 0, "north_east": 1,
+		},
+		"schedule": [
+			"red", "green", "blue", "red", "blue", "green",
+			"green", "blue", "red", "blue", "red", "green",
+			"blue", "green", "red", "green", "blue", "red",
+			"green", "blue", "red", "blue",
+		],
+	},
 ]
+
+
+static func difficulty_text(index: int) -> String:
+	if index < 0 or index >= count():
+		return "UNKNOWN"
+	match int(LEVELS[index].get("difficulty", 1)):
+		1: return "INTRO"
+		2: return "EASY"
+		3: return "MODERATE"
+		4: return "TRICKY"
+		_: return "EXPERT"
 
 
 static func count() -> int:
@@ -131,7 +216,7 @@ static func path_exists(edges: Dictionary, start: String, destination: String) -
 
 
 static func validate(level: Dictionary) -> bool:
-	for required in ["id", "name", "nodes", "edges", "defaults", "schedule", "quota", "spawn_interval"]:
+	for required in ["id", "name", "nodes", "edges", "defaults", "schedule", "quota", "spawn_interval", "difficulty"]:
 		if not level.has(required):
 			return false
 	var nodes: Dictionary = level["nodes"]
@@ -141,6 +226,8 @@ static func validate(level: Dictionary) -> bool:
 	if nodes.size() < 7 or not nodes.has("depot") or edges.is_empty():
 		return false
 	if int(level["quota"]) < 1 or float(level["spawn_interval"]) <= 0.0:
+		return false
+	if int(level["difficulty"]) < 1 or int(level["difficulty"]) > 5:
 		return false
 	if sequence.size() < int(level["quota"]) + 2:
 		return false
