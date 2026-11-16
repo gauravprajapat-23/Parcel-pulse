@@ -1,27 +1,28 @@
 extends Control
 class_name BoardView
 
-# Render-only view: all routing, scoring and delivery states belong to
-# ShiftController and BoardState.
+# UI-01B composition layer. CityBoardArt renders static decorative content,
+# CityBoardOverlay renders moving visuals. Both use the same visual geometry.
+# Input and gameplay remain owned by this view and ShiftController respectively.
 var controller: ShiftController
 var guide_focus: String = ""
 var guide_needs_action: bool = false
-
-const INK = Color("#d9edfa")
-const ROAD_BACK = Color("#162b40")
-const ROAD_FRONT = Color("#34516a")
-const COLORS = {
-	"red": Color("#ff6d8e"),
-	"blue": Color("#57b5f7"),
-	"green": Color("#7ce0a8"),
-}
+var city_art: CityBoardArt
+var dynamic_layer: CityBoardOverlay
 
 
 func bind_controller(value: ShiftController) -> void:
+	if controller != null:
+		if controller.board.junction_changed.is_connected(_on_junction_changed):
+			controller.board.junction_changed.disconnect(_on_junction_changed)
+		if controller.phase_changed.is_connected(_on_phase_changed):
+			controller.phase_changed.disconnect(_on_phase_changed)
 	controller = value
 	controller.board.junction_changed.connect(_on_junction_changed)
 	controller.phase_changed.connect(_on_phase_changed)
-	queue_redraw()
+	if dynamic_layer != null:
+		dynamic_layer.controller = controller
+		dynamic_layer.queue_redraw()
 
 
 func set_guide_focus(node_id: String, needs_action: bool) -> void:
@@ -29,123 +30,72 @@ func set_guide_focus(node_id: String, needs_action: bool) -> void:
 		return
 	guide_focus = node_id
 	guide_needs_action = needs_action
-	queue_redraw()
+	if dynamic_layer != null:
+		dynamic_layer.guide_focus = node_id
+		dynamic_layer.guide_needs_action = needs_action
+		dynamic_layer.queue_redraw()
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	resized.connect(queue_redraw)
+	clip_contents = true
+	city_art = CityBoardArt.new()
+	city_art.name = "CityArt"
+	city_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(city_art)
+	city_art.set_anchors_preset(Control.PRESET_FULL_RECT)
+
+	dynamic_layer = CityBoardOverlay.new()
+	dynamic_layer.name = "DynamicOverlay"
+	dynamic_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(dynamic_layer)
+	dynamic_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dynamic_layer.controller = controller
+	dynamic_layer.guide_focus = guide_focus
+	dynamic_layer.guide_needs_action = guide_needs_action
+	resized.connect(_on_board_resized)
+
+
+func _on_board_resized() -> void:
+	if city_art != null:
+		city_art.queue_redraw()
+	if dynamic_layer != null:
+		dynamic_layer.queue_redraw()
 
 
 func _process(_delta: float) -> void:
 	if controller != null and controller.phase == ShiftController.Phase.RUNNING:
-		queue_redraw()
+		if dynamic_layer != null:
+			dynamic_layer.queue_redraw()
 
 
 func _on_junction_changed(_id: String, _target: String) -> void:
-	queue_redraw()
+	if dynamic_layer != null:
+		dynamic_layer.queue_redraw()
 
 
 func _on_phase_changed(_phase: int) -> void:
-	queue_redraw()
+	if dynamic_layer != null:
+		dynamic_layer.queue_redraw()
 
 
 func _point(node_id: String) -> Vector2:
-	return _normalized_point(controller.board.get_position_normalized(node_id))
+	return CityBoardGeometry.node_point(node_id, size)
 
 
 func _normalized_point(value: Vector2) -> Vector2:
 	return Vector2(value.x * size.x, value.y * size.y)
 
 
-func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), Color("#102238"))
-	if controller == null:
-		return
-
-	# Draw every possible legal edge before indicating each active direction.
-	for start_id in BoardState.EDGES.keys():
-		var origin: Vector2 = _point(str(start_id))
-		var options: Array = BoardState.EDGES[start_id]
-		for end_id in options:
-			var destination: Vector2 = _point(str(end_id))
-			draw_line(origin, destination, ROAD_BACK, 23.0, true)
-			draw_line(origin, destination, ROAD_FRONT, 13.0, true)
-
-	for destination_id in BoardState.DESTINATION_IDS:
-		var center: Vector2 = _point(destination_id)
-		var color: Color = COLORS[destination_id]
-		draw_circle(center, 32.0, ROAD_BACK, true)
-		draw_circle(center, 27.0, color, true)
-		_draw_symbol(center, destination_id, Color("#142034"), 15.0)
-		draw_string(
-			get_theme_default_font(), center + Vector2(-38, 54),
-			destination_id.capitalize(), HORIZONTAL_ALIGNMENT_CENTER, 76,
-			17, INK
-		)
-
-	var depot_center: Vector2 = _point("depot")
-	draw_circle(depot_center, 28.0, Color("#ffbd5f"), true)
-	draw_rect(Rect2(depot_center - Vector2(11, 8), Vector2(22, 19)), Color("#263044"), true)
-	draw_line(depot_center + Vector2(-11, -8), depot_center + Vector2(0, -17), Color.WHITE, 3.0, true)
-	draw_line(depot_center + Vector2(0, -17), depot_center + Vector2(11, -8), Color.WHITE, 3.0, true)
-	draw_string(
-		get_theme_default_font(), depot_center + Vector2(-37, 52),
-		"DEPOT", HORIZONTAL_ALIGNMENT_CENTER, 74, 17, INK
+func get_rendered_parcel_position(parcel: DeliveryParcel) -> Vector2:
+	return CityBoardGeometry.route_point(
+		parcel.current_node, parcel.next_node, parcel.progress, size
 	)
-
-	for junction_id in BoardState.JUNCTION_IDS:
-		var center: Vector2 = _point(junction_id)
-		var outgoing: String = controller.board.get_next_node(junction_id)
-		var direction: Vector2 = (_point(outgoing) - center).normalized()
-		draw_circle(center, 31.0, Color("#0d1a2b"), true)
-		draw_circle(center, 25.0, Color("#ffc465"), true)
-		draw_circle(center, 19.0, Color("#36536a"), true)
-		draw_line(center - direction * 9.0, center + direction * 15.0, Color.WHITE, 4.0, true)
-		var tip: Vector2 = center + direction * 19.0
-		var side: Vector2 = Vector2(-direction.y, direction.x)
-		draw_colored_polygon(PackedVector2Array([
-			tip, tip - direction * 9.0 + side * 6.0,
-			tip - direction * 9.0 - side * 6.0
-		]), Color.WHITE)
-
-	# Circle only the next junction the live guide is referring to.
-	if controller.board.is_junction(guide_focus):
-		var focus: Vector2 = _point(guide_focus)
-		var ring: Color = Color("#ffde84") if guide_needs_action else Color("#83efb3")
-		draw_arc(focus, 38.0, 0.0, TAU, 36, ring, 4.0, true)
-
-	for parcel in controller.parcels:
-		if not parcel.active:
-			continue
-		var position: Vector2 = _normalized_point(controller.get_parcel_position(parcel))
-		draw_circle(position + Vector2(1, 4), 22.0, Color(0.0, 0.0, 0.0, 0.25), true)
-		draw_circle(position, 20.0, COLORS.get(parcel.destination, Color.WHITE), true)
-		draw_arc(position, 20.0, 0.0, TAU, 28, Color.WHITE, 2.0, true)
-		_draw_symbol(position, parcel.destination, Color("#152339"), 10.0)
-
-
-func _draw_symbol(center: Vector2, kind: String, tint: Color, radius: float) -> void:
-	match kind:
-		"red":
-			draw_colored_polygon(PackedVector2Array([
-				center + Vector2(0, -radius), center + Vector2(radius, 0),
-				center + Vector2(0, radius), center + Vector2(-radius, 0)
-			]), tint)
-		"blue":
-			draw_circle(center, radius * 0.8, tint, true)
-		"green":
-			draw_colored_polygon(PackedVector2Array([
-				center + Vector2(0, -radius),
-				center + Vector2(radius, radius * 0.8),
-				center + Vector2(-radius, radius * 0.8)
-			]), tint)
 
 
 func _gui_input(event: InputEvent) -> void:
-	# The project converts Android taps to mouse clicks so both Buttons and
-	# this board share one input path. Do not also process ScreenTouch: that
-	# would flip a junction twice for a single tap on some devices.
+	# Android touch emulation produces mouse input for both buttons and board.
+	# Ignoring raw ScreenTouch here prevents a double toggle per touch.
 	if not event is InputEventMouseButton:
 		return
 	var click := event as InputEventMouseButton
@@ -158,18 +108,18 @@ func _gui_input(event: InputEvent) -> void:
 func toggle_at_local_position(local_position: Vector2) -> bool:
 	if controller == null or controller.phase != ShiftController.Phase.RUNNING:
 		return false
-	# Larger invisible target than the 31px drawn marker, for one-handed play.
-	var hit_radius: float = minf(72.0, maxf(48.0, minf(size.x, size.y) * 0.13))
-	var closest_id: String = ""
-	var closest_distance: float = INF
+	var radius: float = minf(72.0, maxf(48.0, minf(size.x, size.y) * 0.13))
+	var nearest_id: String = ""
+	var best_distance: float = INF
 	for junction_id in BoardState.JUNCTION_IDS:
 		var distance: float = local_position.distance_to(_point(junction_id))
-		if distance <= hit_radius and distance < closest_distance:
-			closest_id = junction_id
-			closest_distance = distance
-	if closest_id.is_empty():
+		if distance <= radius and distance < best_distance:
+			nearest_id = junction_id
+			best_distance = distance
+	if nearest_id.is_empty():
 		return false
-	if not controller.toggle_junction(closest_id):
+	if not controller.toggle_junction(nearest_id):
 		return false
-	queue_redraw()
+	if dynamic_layer != null:
+		dynamic_layer.queue_redraw()
 	return true
