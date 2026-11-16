@@ -38,7 +38,7 @@ godot --headless --path . --script res://tests/test_ui_juice.gd
 godot --headless --path . --script res://tests/test_ui_responsive.gd
 ```
 
-Read the [UI-01C game feel guide](docs/ui_01c_game_feel.md) and [UI-01B city board guide](docs/ui_01b_city_board.md) and [UI-01A design system](docs/ui_01a_design_system.md) for reusable components and its validation checklist. Read [tests/README.md](tests/README.md) for Windows commands and a physical Android smoke-test checklist. The [first-session validation plan](docs/first_session_validation.md) covers the guided tutorial and player comprehension test. The Android debug APK script and preset are documented in [docs/android_verification.md](docs/android_verification.md).
+Read the [UI-01D Android release gate](docs/ui_01d_android_release_gate.md), [UI-01C game feel guide](docs/ui_01c_game_feel.md) and [UI-01B city board guide](docs/ui_01b_city_board.md) and [UI-01A design system](docs/ui_01a_design_system.md) for reusable components and its validation checklist. Read [tests/README.md](tests/README.md) for Windows commands and a physical Android smoke-test checklist. The [first-session validation plan](docs/first_session_validation.md) covers the guided tutorial and player comprehension test. The Android debug APK script and preset are documented in [docs/android_verification.md](docs/android_verification.md).
 
 ## How to play
 

@@ -23,6 +23,14 @@ Successful tests print `Parcel Pulse Phase 1: N passed, 0 failed.` and return ex
 
 The suite checks movement, branching, correct and incorrect deliveries, invalid destinations, mistake limits, completion, pause/resume, restarts, duplicate scoring, and a full guided 12-delivery run.
 
+## Local import + all tests without Android SDK
+
+```powershell
+.\tools\build_android_debug.ps1 -TestsOnly -GodotExe "C:\Godot\Godot_v4.7.2-stable_win64_console.exe"
+```
+
+See [UI-01D device matrix](../docs/ui_01d_android_release_gate.md) for screenshot and physical-device acceptance criteria.
+
 ## Run the game
 
 ```bash
