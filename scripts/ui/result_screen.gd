@@ -3,12 +3,15 @@ class_name ResultScreen
 
 signal retry_requested()
 signal menu_requested()
+signal next_stage_requested()
 
 const ACTION_BUTTON_SCENE = preload("res://scenes/ui/action_button.tscn")
 
 var title_label: Label
 var details_label: Label
 var rating_label: Label
+var next_stage_button: ActionButton
+var menu_button: ActionButton
 
 
 func _ready() -> void:
@@ -47,13 +50,27 @@ func _ready() -> void:
 	retry_button.configure("PLAY AGAIN", "retry", "gold")
 	retry_button.pressed.connect(func() -> void: retry_requested.emit())
 
-	var menu_button := ACTION_BUTTON_SCENE.instantiate() as ActionButton
-	column.add_child(menu_button)
-	menu_button.configure("BACK TO MENU", "exit", "secondary")
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 8)
+	column.add_child(actions)
+
+	next_stage_button = ACTION_BUTTON_SCENE.instantiate() as ActionButton
+	actions.add_child(next_stage_button)
+	next_stage_button.configure("NEXT STAGE", "play", "gold")
+	next_stage_button.pressed.connect(func() -> void: next_stage_requested.emit())
+	next_stage_button.visible = false
+
+	menu_button = ACTION_BUTTON_SCENE.instantiate() as ActionButton
+	actions.add_child(menu_button)
+	menu_button.configure("LEVELS", "exit", "secondary")
 	menu_button.pressed.connect(func() -> void: menu_requested.emit())
 
 
-func show_result(success: bool, earned_score: int, delivered: int, errors: int, quota: int = ShiftController.REQUIRED_DELIVERIES) -> void:
+func show_result(
+		success: bool, earned_score: int, delivered: int, errors: int,
+		quota: int = ShiftController.REQUIRED_DELIVERIES, has_next: bool = false
+	) -> void:
+	next_stage_button.visible = success and has_next
 	title_label.text = "SHIFT COMPLETE!" if success else "SHIFT ENDED"
 	if success:
 		var stars: int = clampi(3 - errors, 1, 3)
