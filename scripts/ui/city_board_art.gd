@@ -46,6 +46,8 @@ func _draw_sky_and_blocks() -> void:
 	match board.palette:
 		1: base = Color("#183049")
 		2: base = Color("#0E3C3C")
+		3: base = Color("#26364A")
+		4: base = Color("#232547")
 	draw_rect(Rect2(Vector2.ZERO, size), base)
 	for index in range(7):
 		var shade: Color = base.lightened(0.12).lerp(base.darkened(0.07), float(index) / 6.0)

@@ -83,3 +83,25 @@ static func save_profile(profile: Dictionary, path: String = SAVE_PATH) -> bool:
 		ProjectSettings.globalize_path(path)
 	)
 	return move_result == OK
+
+
+static func completed_count(profile: Dictionary) -> int:
+	var best: Dictionary = profile.get("best", {})
+	var completed: int = 0
+	for index in range(LevelCatalog.count()):
+		var record: Variant = best.get(str(index), {})
+		if record is Dictionary and int(record.get("stars", 0)) > 0:
+			completed += 1
+	return completed
+
+
+static func recommended_level(profile: Dictionary) -> int:
+	# Recommend the first unlocked but uncleared map. If all available maps
+	# have been cleared, suggest the highest unlocked level for replay.
+	var unlocked: int = clampi(int(profile.get("unlocked", 1)), 1, LevelCatalog.count())
+	var best: Dictionary = profile.get("best", {})
+	for index in range(unlocked):
+		var record: Variant = best.get(str(index), {})
+		if not record is Dictionary or int(record.get("stars", 0)) <= 0:
+			return index
+	return unlocked - 1
