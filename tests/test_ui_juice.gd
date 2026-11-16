@@ -30,6 +30,9 @@ func _run() -> void:
 		_check("game root has GameScreen script", false)
 		quit(1)
 		return
+	# Isolate synthetic wins from the player's real Android/desktop save.
+	game.progress_save_path = "user://phase2_test_ui_juice_profile.json"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.progress_save_path))
 	root.add_child(game)
 	await process_frame
 
@@ -123,6 +126,7 @@ func _run() -> void:
 		and game.board_view.juice_layer.active_feedback_count() == 0)
 
 	game.queue_free()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.progress_save_path))
 	await process_frame
 
 	var isolated := GameJuice.new()

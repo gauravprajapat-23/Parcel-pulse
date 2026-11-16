@@ -30,6 +30,9 @@ func _run() -> void:
 		_check("gameplay script imports", false)
 		quit(1)
 		return
+	# Isolate synthetic wins from the player's real Android/desktop save.
+	game.progress_save_path = "user://phase2_test_ui_design_profile.json"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.progress_save_path))
 	root.add_child(game)
 	await process_frame
 
@@ -108,6 +111,7 @@ func _run() -> void:
 		and not game.action_bar.primary_button.disabled)
 
 	game.queue_free()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.progress_save_path))
 	await process_frame
 	print("Parcel Pulse UI-01A: %d passed, %d failed." % [passed, failed])
 	quit(1 if failed > 0 else 0)

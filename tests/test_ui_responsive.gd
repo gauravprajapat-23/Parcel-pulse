@@ -77,6 +77,9 @@ func _test_responsive_scene() -> void:
 	if game == null:
 		_check("gameplay root script loads", false)
 		return
+	# Isolate synthetic wins from the player's real Android/desktop save.
+	game.progress_save_path = "user://phase2_test_ui_responsive_profile.json"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.progress_save_path))
 	root.add_child(game)
 	await process_frame
 
@@ -152,4 +155,5 @@ func _test_responsive_scene() -> void:
 		game.board_view.juice_layer.active_feedback_count() == 0
 		and game.controller.correct == 0 and game.controller.mistakes == 0)
 	game.queue_free()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.progress_save_path))
 	await process_frame

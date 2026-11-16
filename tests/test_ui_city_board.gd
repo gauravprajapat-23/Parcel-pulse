@@ -69,6 +69,9 @@ func _test_scene_and_input() -> void:
 	if game == null:
 		_check("gameplay root type", false)
 		return
+	# Isolate synthetic wins from the player's real Android/desktop save.
+	game.progress_save_path = "user://phase2_test_ui_city_board_profile.json"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.progress_save_path))
 	root.add_child(game)
 	await process_frame
 
@@ -106,4 +109,5 @@ func _test_scene_and_input() -> void:
 	game.pause_button.pressed.emit()
 	_check("paused board ignores touch", not board.toggle_at_local_position(board._point("hub")))
 	game.queue_free()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.progress_save_path))
 	await process_frame

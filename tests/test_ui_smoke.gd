@@ -30,6 +30,9 @@ func _run() -> void:
 		_check("game scene is a GameScreen", false)
 		quit(1)
 		return
+	# Isolate synthetic wins from the player's real Android/desktop save.
+	game.progress_save_path = "user://phase2_test_ui_smoke_profile.json"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.progress_save_path))
 	root.add_child(game)
 	await process_frame
 	_check("gameplay UI scene initializes", game.board_view != null and game.play_button != null and game.result_panel != null)
@@ -98,6 +101,7 @@ func _run() -> void:
 	game.exit_button.pressed.emit()
 	_check("exit returns to ready screen", game.controller.phase == ShiftController.Phase.READY and not game.play_button.disabled)
 	game.queue_free()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.progress_save_path))
 	await process_frame
 	print("Parcel Pulse UI smoke: %d passed, %d failed." % [passed, failed])
 	quit(1 if failed > 0 else 0)

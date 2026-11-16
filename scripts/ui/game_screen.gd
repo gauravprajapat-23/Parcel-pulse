@@ -17,6 +17,7 @@ var coach_label: Label
 var guide_button: Button
 var guide_enabled: bool = true
 var progress_profile: Dictionary = {}
+var progress_save_path: String = ProgressStore.SAVE_PATH
 var level_row: HBoxContainer
 var level_name_label: Label
 var previous_level_button: Button
@@ -49,7 +50,7 @@ const ANDROID_BACK_DEBOUNCE_MS: int = 300
 
 func _ready() -> void:
 	_build_interface()
-	progress_profile = ProgressStore.load_profile()
+	progress_profile = ProgressStore.load_profile(progress_save_path)
 	controller.phase_changed.connect(_on_phase_changed)
 	controller.level_changed.connect(_on_level_changed)
 	controller.totals_changed.connect(_on_totals_changed)
@@ -516,7 +517,7 @@ func _on_shift_finished(success: bool, earned_score: int, delivered: int, errors
 		progress_profile = ProgressStore.record_win(
 			progress_profile, controller.level_index, earned_score, errors
 		)
-		if not ProgressStore.save_profile(progress_profile):
+		if not ProgressStore.save_profile(progress_profile, progress_save_path):
 			push_warning("Parcel Pulse progression could not be saved on this device.")
 	result_backdrop.visible = true
 	result_backdrop.modulate.a = 1.0 if reduced_motion else 0.0
