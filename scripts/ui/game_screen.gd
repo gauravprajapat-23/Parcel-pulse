@@ -23,6 +23,10 @@ var restart_button: Button
 var exit_button: Button
 var result_backdrop: ColorRect
 var result_panel: ResultScreen
+var sfx_player: SfxPlayer
+var sound_button: Button
+var _result_tween: Tween
+var _score_tween: Tween
 var _last_android_back_msec: int = -1000
 const ANDROID_BACK_DEBOUNCE_MS: int = 300
 
@@ -76,6 +80,9 @@ func handle_back_request() -> void:
 
 
 func _build_interface() -> void:
+	sfx_player = SfxPlayer.new()
+	sfx_player.name = "UiSounds"
+	add_child(sfx_player)
 	var backdrop := ColorRect.new()
 	backdrop.color = ParcelTheme.BACKDROP
 	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -107,6 +114,13 @@ func _build_interface() -> void:
 	pulse_title.text = "PULSE"
 	ParcelTheme.label_style(pulse_title, 30, ParcelTheme.GOLD)
 	title_row.add_child(pulse_title)
+	sound_button = Button.new()
+	sound_button.text = "SFX ON"
+	sound_button.custom_minimum_size = Vector2(76, 44)
+	ParcelTheme.style_button(sound_button, "quiet")
+	sound_button.add_theme_font_size_override("font_size", 12)
+	sound_button.pressed.connect(_on_sound_toggle_pressed)
+	title_row.add_child(sound_button)
 
 	var subtitle := Label.new()
 	subtitle.text = "ROUTE  •  DELIVER  •  KEEP THE CITY MOVING"
@@ -133,6 +147,7 @@ func _build_interface() -> void:
 	board_view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	board_view.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	board_view.bind_controller(controller)
+	board_view.junction_activated.connect(_on_junction_activated)
 	board_panel.add_child(board_view)
 
 	# The guidance panel stays compact; its on/off control lives in the action bar.
@@ -196,9 +211,29 @@ func _center_result() -> void:
 	var box_width: float = minf(420.0, maxf(260.0, result_backdrop.size.x - 32.0))
 	result_panel.position = Vector2(
 		(result_backdrop.size.x - box_width) * 0.5,
-		(result_backdrop.size.y - 310.0) * 0.5
+		(result_backdrop.size.y - 350.0) * 0.5
 	)
-	result_panel.size = Vector2(box_width, 310)
+	result_panel.size = Vector2(box_width, 350)
+
+
+func _on_sound_toggle_pressed() -> void:
+	sfx_player.set_enabled(not sfx_player.enabled)
+	sound_button.text = "SFX ON" if sfx_player.enabled else "SFX OFF"
+
+
+func _on_junction_activated(_node_id: String) -> void:
+	sfx_player.play_event("tap")
+
+
+func _hide_results_and_reset_fx() -> void:
+	if _result_tween != null and _result_tween.is_running():
+		_result_tween.kill()
+	result_backdrop.visible = false
+	result_backdrop.modulate.a = 1.0
+	board_view.clear_feedback()
+	if _score_tween != null and _score_tween.is_running():
+		_score_tween.kill()
+	score_label.modulate = Color.WHITE
 
 
 func _on_guide_pressed() -> void:
@@ -236,21 +271,22 @@ func _on_primary_pressed() -> void:
 
 
 func _on_play_pressed() -> void:
-	result_backdrop.visible = false
+	_hide_results_and_reset_fx()
 	controller.start_shift()
 
 
 func _on_pause_pressed() -> void:
 	controller.set_paused(controller.phase == ShiftController.Phase.RUNNING)
+	sfx_player.play_event("pause")
 
 
 func _on_restart_pressed() -> void:
-	result_backdrop.visible = false
+	_hide_results_and_reset_fx()
 	controller.restart_shift()
 
 
 func _on_exit_pressed() -> void:
-	result_backdrop.visible = false
+	_hide_results_and_reset_fx()
 	controller.exit_shift()
 
 
@@ -273,14 +309,29 @@ func _on_totals_changed(new_score: int, delivered: int, errors: int) -> void:
 	hud_panel.update_stats(delivered, new_score, errors)
 
 
-func _on_delivery_scored(_parcel: DeliveryParcel, matched: bool) -> void:
+func _on_delivery_scored(parcel: DeliveryParcel, matched: bool) -> void:
+	board_view.show_delivery_feedback(parcel, matched)
+	sfx_player.play_event("success" if matched else "mistake")
 	if matched:
-		hint_label.text = "Nice delivery! Keep those routes moving."
+		hint_label.text = "Delivered! +%d points." % ShiftController.SCORE_PER_DELIVERY
+		if _score_tween != null and _score_tween.is_running():
+			_score_tween.kill()
+		score_label.modulate = ParcelTheme.GOLD_LIGHT
+		_score_tween = create_tween()
+		_score_tween.tween_property(score_label, "modulate", Color.WHITE, 0.35)
 	else:
-		hint_label.text = "Wrong house! Change the next junction."
+		hint_label.text = "Wrong house! Check the color and symbol."
 
 
 func _on_shift_finished(success: bool, earned_score: int, delivered: int, errors: int) -> void:
 	result_panel.show_result(success, earned_score, delivered, errors)
 	result_backdrop.visible = true
+	result_backdrop.modulate.a = 0.0
 	_center_result()
+	if _result_tween != null and _result_tween.is_running():
+		_result_tween.kill()
+	_result_tween = create_tween()
+	_result_tween.set_trans(Tween.TRANS_CUBIC)
+	_result_tween.set_ease(Tween.EASE_OUT)
+	_result_tween.tween_property(result_backdrop, "modulate:a", 1.0, 0.24)
+	sfx_player.play_event("win" if success else "mistake")

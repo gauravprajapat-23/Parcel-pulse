@@ -8,6 +8,7 @@ const ACTION_BUTTON_SCENE = preload("res://scenes/ui/action_button.tscn")
 
 var title_label: Label
 var details_label: Label
+var rating_label: Label
 
 
 func _ready() -> void:
@@ -21,7 +22,7 @@ func _ready() -> void:
 	add_child(padding)
 
 	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 15)
+	column.add_theme_constant_override("separation", 9)
 	padding.add_child(column)
 
 	title_label = Label.new()
@@ -29,6 +30,11 @@ func _ready() -> void:
 	title_label.add_theme_font_size_override("font_size", 30)
 	title_label.add_theme_color_override("font_color", Color("#fff0c9"))
 	column.add_child(title_label)
+	rating_label = Label.new()
+	rating_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rating_label.add_theme_font_size_override("font_size", 24)
+	rating_label.add_theme_color_override("font_color", ParcelTheme.GOLD_LIGHT)
+	column.add_child(rating_label)
 
 	details_label = Label.new()
 	details_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -49,7 +55,12 @@ func _ready() -> void:
 
 func show_result(success: bool, earned_score: int, delivered: int, errors: int) -> void:
 	title_label.text = "SHIFT COMPLETE!" if success else "SHIFT ENDED"
-	details_label.text = "Delivered: %d/12     Errors: %d/3\nScore: %d" % [
+	if success:
+		var stars: int = clampi(3 - errors, 1, 3)
+		rating_label.text = "★".repeat(stars) + "☆".repeat(3 - stars)
+	else:
+		rating_label.text = "KEEP PRACTICING"
+	details_label.text = "DELIVERED %d / 12    MISTAKES %d / 3\nSCORE  %d" % [
 		delivered, errors, earned_score
 	]
 

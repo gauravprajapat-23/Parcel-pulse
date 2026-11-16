@@ -1,6 +1,8 @@
 extends Control
 class_name BoardView
 
+signal junction_activated(node_id: String)
+
 # UI-01B composition layer. CityBoardArt renders static decorative content,
 # CityBoardOverlay renders moving visuals. Both use the same visual geometry.
 # Input and gameplay remain owned by this view and ShiftController respectively.
@@ -9,6 +11,7 @@ var guide_focus: String = ""
 var guide_needs_action: bool = false
 var city_art: CityBoardArt
 var dynamic_layer: CityBoardOverlay
+var juice_layer: GameJuice
 
 
 func bind_controller(value: ShiftController) -> void:
@@ -53,6 +56,12 @@ func _ready() -> void:
 	dynamic_layer.controller = controller
 	dynamic_layer.guide_focus = guide_focus
 	dynamic_layer.guide_needs_action = guide_needs_action
+
+	juice_layer = GameJuice.new()
+	juice_layer.name = "FeedbackOverlay"
+	juice_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(juice_layer)
+	juice_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
 	resized.connect(_on_board_resized)
 
 
@@ -61,17 +70,22 @@ func _on_board_resized() -> void:
 		city_art.queue_redraw()
 	if dynamic_layer != null:
 		dynamic_layer.queue_redraw()
+	if juice_layer != null:
+		juice_layer.queue_redraw()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if controller != null and controller.phase == ShiftController.Phase.RUNNING:
 		if dynamic_layer != null:
-			dynamic_layer.queue_redraw()
+			dynamic_layer.advance_visual(delta)
 
 
-func _on_junction_changed(_id: String, _target: String) -> void:
+func _on_junction_changed(node_id: String, _target: String) -> void:
 	if dynamic_layer != null:
 		dynamic_layer.queue_redraw()
+	if juice_layer != null:
+		juice_layer.show_junction(node_id)
+	junction_activated.emit(node_id)
 
 
 func _on_phase_changed(_phase: int) -> void:
@@ -91,6 +105,19 @@ func get_rendered_parcel_position(parcel: DeliveryParcel) -> Vector2:
 	return CityBoardGeometry.route_point(
 		parcel.current_node, parcel.next_node, parcel.progress, size
 	)
+
+
+func show_delivery_feedback(parcel: DeliveryParcel, matched: bool) -> void:
+	if juice_layer != null:
+		juice_layer.show_delivery(parcel, matched)
+
+
+func clear_feedback() -> void:
+	if juice_layer != null:
+		juice_layer.clear_effects()
+	if dynamic_layer != null:
+		dynamic_layer.route_flow_phase = 0.0
+		dynamic_layer.queue_redraw()
 
 
 func _gui_input(event: InputEvent) -> void:

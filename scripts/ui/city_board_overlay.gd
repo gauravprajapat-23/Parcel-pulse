@@ -6,12 +6,20 @@ class_name CityBoardOverlay
 var controller: ShiftController
 var guide_focus: String = ""
 var guide_needs_action: bool = false
+var route_flow_phase: float = 0.0
 
 const COLOR_RED: Color = Color("#FF738C")
 const COLOR_BLUE: Color = Color("#5CC8FF")
 const COLOR_GREEN: Color = Color("#83F2AC")
 const GOLD: Color = Color("#FFD16B")
 const INK: Color = Color("#123046")
+
+
+func advance_visual(delta: float) -> void:
+	if controller == null or controller.phase != ShiftController.Phase.RUNNING:
+		return
+	route_flow_phase = fposmod(route_flow_phase + maxf(delta, 0.0) * 0.22, 1.0)
+	queue_redraw()
 
 
 func _ready() -> void:
@@ -48,10 +56,12 @@ func _draw_active_routes() -> void:
 		aura.a = 0.18
 		draw_polyline(road, aura, 17.0 * s, true)
 		var line_color: Color = tint
-		line_color.a = 0.84
+		line_color.a = 0.78 + 0.08 * sin(route_flow_phase * TAU)
 		draw_polyline(road, line_color, 3.0 * s, true)
-		for t in [0.34, 0.63]:
-			_draw_chevron(from_id, to_id, float(t), tint, s)
+		for base_t in [0.16, 0.45, 0.74]:
+			var t: float = fposmod(float(base_t) + route_flow_phase, 1.0)
+			if t >= 0.08 and t <= 0.92:
+				_draw_chevron(from_id, to_id, t, tint, s)
 
 
 func _route_color(destination_id: String) -> Color:
