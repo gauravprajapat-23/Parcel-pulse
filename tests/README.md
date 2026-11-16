@@ -16,6 +16,7 @@ godot --headless --path . --script res://tests/test_guidance.gd
 godot --headless --path . --script res://tests/test_ui_design.gd
 godot --headless --path . --script res://tests/test_ui_city_board.gd
 godot --headless --path . --script res://tests/test_ui_juice.gd
+godot --headless --path . --script res://tests/test_ui_responsive.gd
 ```
 
 Successful tests print `Parcel Pulse Phase 1: N passed, 0 failed.` and return exit code 0. A failed assertion reports `FAIL` and returns exit code 1.
@@ -46,6 +47,8 @@ if ($LASTEXITCODE -ne 0) { throw "UI design system tests failed" }
 if ($LASTEXITCODE -ne 0) { throw "City board tests failed" }
 & $godot --headless --path . --script res://tests/test_ui_juice.gd
 if ($LASTEXITCODE -ne 0) { throw "UI game-feel tests failed" }
+& $godot --headless --path . --script res://tests/test_ui_responsive.gd
+if ($LASTEXITCODE -ne 0) { throw "Responsive UI tests failed" }
 & $godot --path .
 ```
 

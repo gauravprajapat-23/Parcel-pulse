@@ -3,6 +3,7 @@
 [CmdletBinding()]
 param(
     [string]$GodotExe = 'C:\Godot\Godot_v4.7.2-stable_win64_console.exe',
+    [switch]$TestsOnly,
     [switch]$InstallOnDevice
 )
 
@@ -32,6 +33,12 @@ Invoke-Godot -Step 'Routing guide suite' -Arguments @('--headless', '--path', $p
 Invoke-Godot -Step 'UI-01A design suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_ui_design.gd')
 Invoke-Godot -Step 'UI-01B city board suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_ui_city_board.gd')
 Invoke-Godot -Step 'UI-01C game feel suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_ui_juice.gd')
+Invoke-Godot -Step 'UI-01D mobile responsive suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_ui_responsive.gd')
+if ($TestsOnly) {
+    if ($InstallOnDevice) { throw 'TestsOnly cannot be combined with InstallOnDevice.' }
+    Write-Host 'All Godot regression commands returned success; Android export was intentionally skipped.' -ForegroundColor Green
+    return
+}
 Invoke-Godot -Step 'Android debug APK export' -Arguments @('--headless', '--path', $project, '--export-debug', 'Android', $apk)
 
 if (!(Test-Path -LiteralPath $apk -PathType Leaf)) {

@@ -14,6 +14,7 @@ A small, original, offline-first parcel-routing game built with **Godot 4.x / GD
 - UI-01A reusable neon theme, three compact HUD cards, and a four-button action bar (PLAY/PAUSE/RESUME, RETRY, GUIDE, EXIT).
 - UI-01B procedural night city with three destination houses, depot, curved neon roads, greenery, gold junctions, and animated-position parcel carts.
 - UI-01C tap ripples, floating delivery feedback, gently animated route chevrons, original synthesized sound cues with an SFX toggle, and smoother results.
+- UI-01D compact Android layouts, safe-area insets, reduced-motion toggle, and capped decorative redraws.
 - Dependency-free GDScript regression tests.
 
 ## Run locally
@@ -34,6 +35,7 @@ godot --headless --path . --script res://tests/test_guidance.gd
 godot --headless --path . --script res://tests/test_ui_design.gd
 godot --headless --path . --script res://tests/test_ui_city_board.gd
 godot --headless --path . --script res://tests/test_ui_juice.gd
+godot --headless --path . --script res://tests/test_ui_responsive.gd
 ```
 
 Read the [UI-01C game feel guide](docs/ui_01c_game_feel.md) and [UI-01B city board guide](docs/ui_01b_city_board.md) and [UI-01A design system](docs/ui_01a_design_system.md) for reusable components and its validation checklist. Read [tests/README.md](tests/README.md) for Windows commands and a physical Android smoke-test checklist. The [first-session validation plan](docs/first_session_validation.md) covers the guided tutorial and player comprehension test. The Android debug APK script and preset are documented in [docs/android_verification.md](docs/android_verification.md).
