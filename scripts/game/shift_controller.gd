@@ -6,6 +6,7 @@ signal parcel_spawned(parcel: DeliveryParcel)
 signal delivery_scored(parcel: DeliveryParcel, matched: bool)
 signal totals_changed(score: int, correct: int, mistakes: int)
 signal shift_finished(success: bool, score: int, correct: int, mistakes: int)
+signal level_changed(level_index: int)
 
 enum Phase { READY, RUNNING, PAUSED, FINISHED }
 
@@ -22,7 +23,31 @@ var score: int = 0
 var correct: int = 0
 var mistakes: int = 0
 var last_success: bool = false
+var level_index: int = 0
+var required_deliveries: int = REQUIRED_DELIVERIES
 var _next_parcel_id: int = 1
+
+
+func select_level(index: int) -> bool:
+	# Level selection is allowed only from READY/FINISHED; switching mid-shift
+	# would invalidate the active parcel route and the result.
+	if phase == Phase.RUNNING or phase == Phase.PAUSED:
+		return false
+	var level: Dictionary = LevelCatalog.get_level(index)
+	if level.is_empty() or not LevelCatalog.validate(level):
+		return false
+	if not board.configure(level, index):
+		return false
+	if not scheduler.configure(level["schedule"], float(level["spawn_interval"])):
+		return false
+	_reset_session()
+	level_index = index
+	required_deliveries = int(level["quota"])
+	phase = Phase.READY
+	level_changed.emit(level_index)
+	phase_changed.emit(phase)
+	totals_changed.emit(score, correct, mistakes)
+	return true
 
 
 func start_shift() -> void:
@@ -147,7 +172,7 @@ func _register_delivery(parcel: DeliveryParcel, matched: bool) -> void:
 		mistakes += 1
 	delivery_scored.emit(parcel, matched)
 	totals_changed.emit(score, correct, mistakes)
-	if correct >= REQUIRED_DELIVERIES:
+	if correct >= required_deliveries:
 		_finish(true)
 	elif mistakes >= MAX_MISTAKES:
 		_finish(false)
