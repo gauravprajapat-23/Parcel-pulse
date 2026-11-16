@@ -13,14 +13,14 @@ Read [Phase 2 maps and progression](docs/phase2_maps_progression.md) and
 [Phase 2B acceptance](docs/phase2b_difficulty_validation.md) for implementation
 and verification.
 
-## Phase 1 playable core
+## Gameplay and current features
 
 - Portrait-first layout with procedural roads, packages, junctions and destinations.
-- **3 tap-to-toggle junctions** and **3 symbol-coded destinations**: red diamond, blue circle, green triangle.
-- A deterministic 18-parcel delivery schedule. Complete 12 correct deliveries to win; 3 wrong deliveries end a shift.
+- **3–5 tap-to-toggle junctions** across five bundled maps and **3 symbol-coded destinations**: red diamond, blue circle, green triangle.
+- Five deterministic stage-specific delivery schedules. Complete 12–16 correct deliveries depending on the map; 3 wrong deliveries end a shift.
 - Fixed-physics-tick movement, score, mistakes and results.
 - Working PLAY, PAUSE/RESUME, RETRY and EXIT-to-ready controls, a 2×2 mobile button grid, Back navigation and automatic background pause.
-- Local state only: no backend, no accounts, no third-party assets, no ads, no subscriptions.
+- Offline save data for unlocks, best scores and stars; no backend, accounts, third-party assets, ads or subscriptions.
 - An optional read-only routing guide highlights the next junction and shows TAP vs READY instructions.
 - UI-01A reusable neon theme, three compact HUD cards, and a four-button action bar (PLAY/PAUSE/RESUME, RETRY, GUIDE, EXIT).
 - UI-01B procedural night city with three destination houses, depot, curved neon roads, greenery, gold junctions, and animated-position parcel carts.
@@ -59,7 +59,7 @@ Read the [UI-01D Android release gate](docs/ui_01d_android_release_gate.md), [UI
 2. Watch the live guide (GUIDE ON by default); it highlights the next junction to check. Turn it off anytime.
 3. Tap a **golden junction** when the guide says TAP to change its white routing arrow.
 4. Guide red diamonds to red, blue circles to blue and green triangles to green.
-5. Get 12 right before making 3 mistakes.
+5. Reach your stage quota (12–16 deliveries) before making 3 mistakes. Winning unlocks the next map.
 
 **RETRY** starts a clean shift, **PAUSE** freezes the scheduler, and **EXIT** abandons the current shift and returns to the ready screen (it does not close the app).
 
@@ -75,8 +75,8 @@ Read the [UI-01D Android release gate](docs/ui_01d_android_release_gate.md), [UI
 
 ## Current limits
 
-This is an early vertical slice. It has one fixed board, one verified schedule, no sound, no persistence and no revenue features. The game must pass headless Godot validation and a real Android touch test before it is called release-ready.
+The current build contains five maps, local progression and generated sound effects, but no online services or revenue features. Native Godot import, automated regressions and physical Android touch/performance checks are still unverified here and must pass before a release candidate is declared.
 
-## Planned Phase 2
+## Recommended next milestone
 
-Tutorial clarity, difficulty and timing balance, more route layouts, visual/audio polish and a progression prototype — **after Phase 1 is validated**.
+**Phase 2C — Native Godot regression, Android smoke tests, and observed difficulty tuning.** Fix any real engine errors, collect playtest evidence, then decide whether to add more levels.
