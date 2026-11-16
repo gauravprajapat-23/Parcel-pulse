@@ -31,8 +31,8 @@ func _run() -> void:
 
 
 func _test_catalog() -> void:
-	_check("three initial stages", LevelCatalog.count() == 3)
-	_check("out-of-bounds level rejected", LevelCatalog.get_level(-1).is_empty() and LevelCatalog.get_level(3).is_empty())
+	_check("five distinct stages", LevelCatalog.count() == 5)
+	_check("out-of-bounds level rejected", LevelCatalog.get_level(-1).is_empty() and LevelCatalog.get_level(LevelCatalog.count()).is_empty())
 	var ids: Dictionary = {}
 	for index in range(LevelCatalog.count()):
 		var definition: Dictionary = LevelCatalog.get_level(index)
@@ -101,11 +101,17 @@ func _test_progress_records() -> void:
 		int(retry["best"]["0"]["score"]) == 1200
 		and int(retry["best"]["0"]["stars"]) == 2)
 	var second: Dictionary = ProgressStore.record_win(retry, 1, 1300, 0)
-	_check("second clear unlocks the final stage",
+	_check("second clear unlocks the third stage",
 		int(second["unlocked"]) == 3)
 	var third: Dictionary = ProgressStore.record_win(second, 2, 1400, 0)
-	_check("final stage never unlocks a nonexistent fourth stage",
-		int(third["unlocked"]) == LevelCatalog.count())
+	_check("third clear unlocks Riverside Switch",
+		int(third["unlocked"]) == 4)
+	var fourth: Dictionary = ProgressStore.record_win(third, 3, 1500, 1)
+	_check("fourth clear unlocks Beacon Docks",
+		int(fourth["unlocked"]) == 5)
+	var fifth: Dictionary = ProgressStore.record_win(fourth, 4, 1600, 0)
+	_check("final stage does not unlock a nonexistent sixth stage",
+		int(fifth["unlocked"]) == LevelCatalog.count())
 	_check("invalid save input falls back safely",
 		int(ProgressStore.sanitize({"version": -1, "unlocked": 999})["unlocked"]) == 1)
 	_check("unlocks are bounded to existing levels",

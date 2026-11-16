@@ -130,6 +130,7 @@ func _run() -> void:
 	await process_frame
 
 	var isolated := GameJuice.new()
+	isolated.board = BoardState.new()
 	root.add_child(isolated)
 	isolated.show_junction("west")
 	isolated.show_junction("invalid")
