@@ -19,3 +19,11 @@ func update_stats(delivered: int, score: int, mistakes: int) -> void:
 	deliveries_card.set_value("%d/%d" % [delivered, ShiftController.REQUIRED_DELIVERIES])
 	score_card.set_value(str(score))
 	lives_card.set_value(str(maxi(0, ShiftController.MAX_MISTAKES - mistakes)))
+
+
+func apply_layout_metrics(height: int) -> void:
+	if not is_node_ready():
+		return
+	var compact: bool = height < 76
+	for card in [deliveries_card, score_card, lives_card]:
+		card.apply_compact(compact, height)

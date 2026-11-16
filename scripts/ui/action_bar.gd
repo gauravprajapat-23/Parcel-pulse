@@ -48,3 +48,10 @@ func set_guide_enabled(enabled: bool) -> void:
 	if not is_node_ready():
 		return
 	guide_button.configure("GUIDE ON" if enabled else "GUIDE OFF", "guide", "secondary")
+
+
+func set_button_height(height: float) -> void:
+	if not is_node_ready():
+		return
+	for button in [primary_button, retry_button, guide_button, exit_button]:
+		button.custom_minimum_size.y = height

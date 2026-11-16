@@ -69,10 +69,11 @@ static func extra_safe_insets(safe_rect: Rect2i, window_pixels: Vector2i, logica
 
 static func fits_minimum_content(viewport_size: Vector2) -> bool:
 	var m: Dictionary = metrics(viewport_size)
-	var width_needed: float = float(m["outer"]) * 2.0 + float((m["board"] as Vector2).x)
+	var board_size: Vector2 = m["board"]
+	var width_needed: float = float(m["outer"]) * 2.0 + board_size.x
 	# Estimated static minimum for the title, 3 stat cards, guide, buttons
 	# and seven inter-container gaps. Viewport tests still inspect real nodes.
-	var height_needed: float = float(m["top"]) + float(m["bottom"]) 		+ 37.0 + float(m["stats_height"]) + float((m["board"] as Vector2).y) 		+ 16.0 + float(m["coach_height"]) + 2.0 * float(m["action_height"]) 		+ 8.0 + 6.0 * float(m["gap"])
+	var height_needed: float = float(m["top"]) + float(m["bottom"]) 		+ 37.0 + float(m["stats_height"]) + board_size.y 		+ 16.0 + float(m["coach_height"]) + 2.0 * float(m["action_height"]) 		+ 8.0 + 6.0 * float(m["gap"])
 	if bool(m["subtitle"]):
 		height_needed += 20.0
 	if bool(m["hint"]):

@@ -25,6 +25,17 @@ var result_backdrop: ColorRect
 var result_panel: ResultScreen
 var sfx_player: SfxPlayer
 var sound_button: Button
+var motion_button: Button
+var screen_margins: MarginContainer
+var screen_column: VBoxContainer
+var header_row: HBoxContainer
+var title_parcel: Label
+var title_pulse: Label
+var tagline_label: Label
+var board_container: PanelContainer
+var coach_container: PanelContainer
+var reduced_motion: bool = false
+var _last_viewport_size: Vector2 = Vector2.ZERO
 var _result_tween: Tween
 var _score_tween: Tween
 var _last_android_back_msec: int = -1000
@@ -40,6 +51,8 @@ func _ready() -> void:
 	_on_phase_changed(controller.phase)
 	_on_totals_changed(controller.score, controller.correct, controller.mistakes)
 	_update_guidance()
+	resized.connect(_on_root_resized)
+	_apply_responsive_layout(get_viewport_rect().size)
 
 
 func _physics_process(delta: float) -> void:
@@ -89,58 +102,65 @@ func _build_interface() -> void:
 	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(backdrop)
 
-	var margins := MarginContainer.new()
-	margins.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margins.add_theme_constant_override("margin_left", 16)
-	margins.add_theme_constant_override("margin_right", 16)
-	margins.add_theme_constant_override("margin_top", 20)
-	margins.add_theme_constant_override("margin_bottom", 18)
+	screen_margins = MarginContainer.new()
+	screen_margins.set_anchors_preset(Control.PRESET_FULL_RECT)
+	screen_margins.add_theme_constant_override("margin_left", 16)
+	screen_margins.add_theme_constant_override("margin_right", 16)
+	screen_margins.add_theme_constant_override("margin_top", 20)
+	screen_margins.add_theme_constant_override("margin_bottom", 18)
 	add_child(margins)
 
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 10)
-	margins.add_child(column)
+	screen_column = VBoxContainer.new()
+	screen_column.add_theme_constant_override("separation", 10)
+	screen_margins.add_child(column)
 
 	# UI-01A: brand typography and stat cards share one palette.
-	var title_row := HBoxContainer.new()
-	title_row.add_theme_constant_override("separation", 7)
-	title_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	column.add_child(title_row)
-	var parcel_title := Label.new()
-	parcel_title.text = "PARCEL"
+	header_row = HBoxContainer.new()
+	header_row.add_theme_constant_override("separation", 7)
+	header_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	screen_column.add_child(title_row)
+	title_parcel = Label.new()
+	title_parcel.text = "PARCEL"
 	ParcelTheme.label_style(parcel_title, 30, ParcelTheme.TEXT)
-	title_row.add_child(parcel_title)
-	var pulse_title := Label.new()
-	pulse_title.text = "PULSE"
+	header_row.add_child(parcel_title)
+	title_pulse = Label.new()
+	title_pulse.text = "PULSE"
 	ParcelTheme.label_style(pulse_title, 30, ParcelTheme.GOLD)
-	title_row.add_child(pulse_title)
+	header_row.add_child(pulse_title)
 	sound_button = Button.new()
 	sound_button.text = "SFX ON"
 	sound_button.custom_minimum_size = Vector2(76, 44)
 	ParcelTheme.style_button(sound_button, "quiet")
 	sound_button.add_theme_font_size_override("font_size", 12)
 	sound_button.pressed.connect(_on_sound_toggle_pressed)
-	title_row.add_child(sound_button)
+	header_row.add_child(sound_button)
+	motion_button = Button.new()
+	motion_button.text = "MOTION ON"
+	motion_button.custom_minimum_size = Vector2(98, 44)
+	ParcelTheme.style_button(motion_button, "quiet")
+	motion_button.add_theme_font_size_override("font_size", 11)
+	motion_button.pressed.connect(_on_motion_toggle_pressed)
+	header_row.add_child(motion_button)
 
-	var subtitle := Label.new()
-	subtitle.text = "ROUTE  •  DELIVER  •  KEEP THE CITY MOVING"
-	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tagline_label = Label.new()
+	tagline_label.text = "ROUTE  •  DELIVER  •  KEEP THE CITY MOVING"
+	tagline_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ParcelTheme.label_style(subtitle, 12, ParcelTheme.CYAN)
-	column.add_child(subtitle)
+	screen_column.add_child(subtitle)
 
 	hud_panel = HUD_SCENE.instantiate() as HudPanel
-	column.add_child(hud_panel)
+	screen_column.add_child(hud_panel)
 	progress_label = hud_panel.deliveries_card.value_label
 	score_label = hud_panel.score_card.value_label
 	mistakes_label = hud_panel.lives_card.value_label
 
-	var board_panel := PanelContainer.new()
-	board_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	board_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	board_panel.add_theme_stylebox_override(
+	board_container = PanelContainer.new()
+	board_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	board_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	board_container.add_theme_stylebox_override(
 		"panel", ParcelTheme.panel_style(ParcelTheme.PANEL, ParcelTheme.BORDER, 22, 2)
 	)
-	column.add_child(board_panel)
+	screen_column.add_child(board_panel)
 
 	board_view = BoardView.new()
 	board_view.custom_minimum_size = Vector2(260, 340)
@@ -148,20 +168,20 @@ func _build_interface() -> void:
 	board_view.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	board_view.bind_controller(controller)
 	board_view.junction_activated.connect(_on_junction_activated)
-	board_panel.add_child(board_view)
+	board_container.add_child(board_view)
 
 	# The guidance panel stays compact; its on/off control lives in the action bar.
-	var coach_panel := PanelContainer.new()
-	coach_panel.add_theme_stylebox_override(
+	coach_container = PanelContainer.new()
+	coach_container.add_theme_stylebox_override(
 		"panel", ParcelTheme.panel_style(ParcelTheme.PANEL, ParcelTheme.BORDER, 16, 1)
 	)
-	column.add_child(coach_panel)
+	screen_column.add_child(coach_panel)
 	var coach_margin := MarginContainer.new()
 	coach_margin.add_theme_constant_override("margin_left", 12)
 	coach_margin.add_theme_constant_override("margin_right", 12)
 	coach_margin.add_theme_constant_override("margin_top", 8)
 	coach_margin.add_theme_constant_override("margin_bottom", 8)
-	coach_panel.add_child(coach_margin)
+	coach_container.add_child(coach_margin)
 	coach_label = Label.new()
 	coach_label.text = "MATCH COLOR + SHAPE. Tap the golden switches."
 	coach_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -175,10 +195,10 @@ func _build_interface() -> void:
 	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ParcelTheme.label_style(hint_label, 14, ParcelTheme.MUTED)
-	column.add_child(hint_label)
+	screen_column.add_child(hint_label)
 
 	action_bar = ACTION_BAR_SCENE.instantiate() as ActionBar
-	column.add_child(action_bar)
+	screen_column.add_child(action_bar)
 	# Legacy aliases remain available to old callers, but this is one
 	# primary action whose meaning depends on the current shift phase.
 	play_button = action_bar.primary_button
@@ -205,15 +225,79 @@ func _build_interface() -> void:
 	_center_result()
 
 
+func _on_root_resized() -> void:
+	# The resize signal also occurs on foldable and orientation transitions.
+	_apply_responsive_layout(get_viewport_rect().size)
+
+
+func _apply_responsive_layout(logical_size: Vector2) -> void:
+	if screen_margins == null or logical_size.x <= 0.0 or logical_size.y <= 0.0:
+		return
+	if logical_size == _last_viewport_size:
+		return
+	_last_viewport_size = logical_size
+	var metrics: Dictionary = MobileLayout.metrics(logical_size)
+	var outer: int = int(metrics["outer"])
+	var top: int = int(metrics["top"])
+	var bottom: int = int(metrics["bottom"])
+	# Non-edge-to-edge Android windows already exclude the system bars. Only
+	# add additional cutout padding when the OS reports actual overlapping space.
+	var safe := Vector4.ZERO
+	if OS.get_name() == "Android":
+		safe = MobileLayout.extra_safe_insets(
+			DisplayServer.get_display_safe_area(),
+			DisplayServer.window_get_size(), logical_size
+		)
+	screen_margins.add_theme_constant_override("margin_left", outer + roundi(safe.x))
+	screen_margins.add_theme_constant_override("margin_right", outer + roundi(safe.z))
+	screen_margins.add_theme_constant_override("margin_top", top + roundi(safe.y))
+	screen_margins.add_theme_constant_override("margin_bottom", bottom + roundi(safe.w))
+	screen_column.add_theme_constant_override("separation", int(metrics["gap"]))
+	ParcelTheme.label_style(title_parcel, int(metrics["title"]), ParcelTheme.TEXT)
+	ParcelTheme.label_style(title_pulse, int(metrics["title"]), ParcelTheme.GOLD)
+	tagline_label.visible = bool(metrics["subtitle"])
+	hud_panel.apply_layout_metrics(int(metrics["stats_height"]))
+	board_view.custom_minimum_size = metrics["board"]
+	ParcelTheme.label_style(coach_label, int(metrics["coach_font"]), ParcelTheme.GOLD_LIGHT)
+	coach_label.custom_minimum_size = Vector2(0, float(metrics["coach_height"]))
+	hint_label.visible = bool(metrics["hint"])
+	action_bar.set_button_height(float(metrics["action_height"]))
+	sound_button.add_theme_font_size_override("font_size", int(metrics["sound_font"]))
+	motion_button.add_theme_font_size_override("font_size", int(metrics["sound_font"]))
+	_center_result()
+
+
+func set_reduced_motion(enabled: bool) -> void:
+	reduced_motion = enabled
+	if motion_button != null:
+		motion_button.text = "MOTION OFF" if enabled else "MOTION ON"
+	if board_view != null:
+		board_view.set_reduced_motion(enabled)
+	if enabled:
+		if _score_tween != null and _score_tween.is_running():
+			_score_tween.kill()
+		if _result_tween != null and _result_tween.is_running():
+			_result_tween.kill()
+		if score_label != null:
+			score_label.modulate = Color.WHITE
+		if result_backdrop != null:
+			result_backdrop.modulate.a = 1.0
+
+
+func _on_motion_toggle_pressed() -> void:
+	set_reduced_motion(not reduced_motion)
+
+
 func _center_result() -> void:
 	if result_panel == null or result_backdrop == null:
 		return
-	var box_width: float = minf(420.0, maxf(260.0, result_backdrop.size.x - 32.0))
+	var box_width: float = minf(420.0, maxf(220.0, result_backdrop.size.x - 24.0))
+	var box_height: float = minf(350.0, maxf(270.0, result_backdrop.size.y - 24.0))
 	result_panel.position = Vector2(
 		(result_backdrop.size.x - box_width) * 0.5,
-		(result_backdrop.size.y - 350.0) * 0.5
+		(result_backdrop.size.y - box_height) * 0.5
 	)
-	result_panel.size = Vector2(box_width, 350)
+	result_panel.size = Vector2(box_width, box_height)
 
 
 func _on_sound_toggle_pressed() -> void:
@@ -317,8 +401,11 @@ func _on_delivery_scored(parcel: DeliveryParcel, matched: bool) -> void:
 		if _score_tween != null and _score_tween.is_running():
 			_score_tween.kill()
 		score_label.modulate = ParcelTheme.GOLD_LIGHT
-		_score_tween = create_tween()
-		_score_tween.tween_property(score_label, "modulate", Color.WHITE, 0.35)
+		if not reduced_motion:
+			_score_tween = create_tween()
+			_score_tween.tween_property(score_label, "modulate", Color.WHITE, 0.35)
+		else:
+			score_label.modulate = Color.WHITE
 	else:
 		hint_label.text = "Wrong house! Check the color and symbol."
 
@@ -326,12 +413,13 @@ func _on_delivery_scored(parcel: DeliveryParcel, matched: bool) -> void:
 func _on_shift_finished(success: bool, earned_score: int, delivered: int, errors: int) -> void:
 	result_panel.show_result(success, earned_score, delivered, errors)
 	result_backdrop.visible = true
-	result_backdrop.modulate.a = 0.0
+	result_backdrop.modulate.a = 1.0 if reduced_motion else 0.0
 	_center_result()
 	if _result_tween != null and _result_tween.is_running():
 		_result_tween.kill()
-	_result_tween = create_tween()
-	_result_tween.set_trans(Tween.TRANS_CUBIC)
-	_result_tween.set_ease(Tween.EASE_OUT)
-	_result_tween.tween_property(result_backdrop, "modulate:a", 1.0, 0.24)
+	if not reduced_motion:
+		_result_tween = create_tween()
+		_result_tween.set_trans(Tween.TRANS_CUBIC)
+		_result_tween.set_ease(Tween.EASE_OUT)
+		_result_tween.tween_property(result_backdrop, "modulate:a", 1.0, 0.24)
 	sfx_player.play_event("win" if success else "mistake")

@@ -30,3 +30,12 @@ func configure(caption: String, glyph: String, highlight: Color) -> void:
 func set_value(value: String) -> void:
 	if is_node_ready():
 		value_label.text = value
+
+
+func apply_compact(compact: bool, height: int) -> void:
+	if not is_node_ready():
+		return
+	custom_minimum_size.y = float(height)
+	ParcelTheme.label_style(glyph_label, 20 if compact else 25, accent)
+	ParcelTheme.label_style(value_label, 19 if compact else 23, ParcelTheme.TEXT)
+	ParcelTheme.label_style(caption_label, 10 if compact else 11, ParcelTheme.MUTED)
