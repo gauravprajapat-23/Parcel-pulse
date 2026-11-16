@@ -1,6 +1,6 @@
 # Phase 2 — Additional maps, stages and offline progression
 
-**Implementation:** three local maps, per-map schedules/quotas, a READY-screen stage preview, sequential unlocks, best score/three-star records and a persistent offline save. **Native Godot and Android verification still required.**
+**Implementation:** initially three local maps (expanded to five in Phase 2B), per-map schedules/quotas, a READY-screen stage preview, sequential unlocks, best score/three-star records and a persistent offline save. **Native Godot and Android verification still required.**
 
 ## Current stages
 
@@ -9,6 +9,8 @@
 | 1 | Old Town | Original three-junction board, with Red left / Blue middle / Green right | 12 | 2.45 s |
 | 2 | Mirror Market | Red and Green exchange sides; switch destination order changes | 13 | 2.30 s |
 | 3 | Canal Crossing | Adds a fourth switch (`upper`), extra junction path for Blue/Green | 14 | 2.15 s |
+| 4 | Riverside Switch | Reordered hub exits with a cross-branch route through upper | 15 | 2.05 s |
+| 5 | Beacon Docks | Five switches and two northern alternate paths | 16 | 1.98 s |
 
 All stages use the original offline one-touch mechanic, color+symbol destination identity, three-mistake limit and 100 points per correct delivery. Each stage has its own deterministic schedule with enough extra parcels to allow two mistakes before the completion quota becomes impossible. No ads, accounts, payments or backend.
 

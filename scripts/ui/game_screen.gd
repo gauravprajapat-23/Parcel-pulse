@@ -382,6 +382,8 @@ func _select_preview_level(index: int) -> void:
 
 
 func _on_result_next_stage() -> void:
+	if controller.phase != ShiftController.Phase.FINISHED or not controller.last_success:
+		return
 	var target: int = controller.level_index + 1
 	if target >= LevelCatalog.count() or not ProgressStore.is_unlocked(progress_profile, target):
 		return

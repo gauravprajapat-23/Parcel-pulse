@@ -56,7 +56,7 @@ func _ready() -> void:
 
 	next_stage_button = ACTION_BUTTON_SCENE.instantiate() as ActionButton
 	actions.add_child(next_stage_button)
-	next_stage_button.configure("NEXT STAGE", "play", "gold")
+	next_stage_button.configure("NEXT", "play", "gold")
 	next_stage_button.pressed.connect(func() -> void: next_stage_requested.emit())
 	next_stage_button.visible = false
 
