@@ -34,6 +34,7 @@ Invoke-Godot -Step 'UI-01A design suite' -Arguments @('--headless', '--path', $p
 Invoke-Godot -Step 'UI-01B city board suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_ui_city_board.gd')
 Invoke-Godot -Step 'UI-01C game feel suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_ui_juice.gd')
 Invoke-Godot -Step 'UI-01D mobile responsive suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_ui_responsive.gd')
+Invoke-Godot -Step 'Phase 2 maps and progression suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_phase2_levels.gd')
 if ($TestsOnly) {
     if ($InstallOnDevice) { throw 'TestsOnly cannot be combined with InstallOnDevice.' }
     Write-Host 'All Godot regression commands returned success; Android export was intentionally skipped.' -ForegroundColor Green

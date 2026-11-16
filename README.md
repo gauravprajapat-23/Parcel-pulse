@@ -2,6 +2,14 @@
 
 A small, original, offline-first parcel-routing game built with **Godot 4.x / GDScript**.
 
+## Phase 2 — three maps and offline progression
+
+Three original stages now have different branching graphs, destination placements,
+schedules and quotas. Use the left/right arrows on the READY screen to preview
+stages. Winning unlocks the next stage and saves best scores/stars offline.
+Read [Phase 2 maps and progression](docs/phase2_maps_progression.md) for the
+implementation and verification protocol.
+
 ## Phase 1 playable core
 
 - Portrait-first layout with procedural roads, packages, junctions and destinations.
@@ -36,6 +44,7 @@ godot --headless --path . --script res://tests/test_ui_design.gd
 godot --headless --path . --script res://tests/test_ui_city_board.gd
 godot --headless --path . --script res://tests/test_ui_juice.gd
 godot --headless --path . --script res://tests/test_ui_responsive.gd
+godot --headless --path . --script res://tests/test_phase2_levels.gd
 ```
 
 Read the [UI-01D Android release gate](docs/ui_01d_android_release_gate.md), [UI-01C game feel guide](docs/ui_01c_game_feel.md) and [UI-01B city board guide](docs/ui_01b_city_board.md) and [UI-01A design system](docs/ui_01a_design_system.md) for reusable components and its validation checklist. Read [tests/README.md](tests/README.md) for Windows commands and a physical Android smoke-test checklist. The [first-session validation plan](docs/first_session_validation.md) covers the guided tutorial and player comprehension test. The Android debug APK script and preset are documented in [docs/android_verification.md](docs/android_verification.md).
