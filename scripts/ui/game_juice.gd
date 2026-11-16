@@ -10,6 +10,7 @@ const MISTAKE_COLOR: Color = Color("#FF8291")
 const TAP_COLOR: Color = Color("#FFD778")
 
 var effects: Array[Dictionary] = []
+var board: BoardState
 var reduced_motion: bool = false
 var _draw_accumulator: float = 0.0
 const VISUAL_FRAME_STEP: float = 1.0 / 30.0
@@ -21,7 +22,7 @@ func _ready() -> void:
 
 
 func show_junction(node_id: String) -> void:
-	if not BoardState.JUNCTION_IDS.has(node_id):
+	if board == null or not board.is_junction(node_id):
 		return
 	# Junction state still changes and audio still plays; omit the ripple.
 	if not reduced_motion:
@@ -32,7 +33,7 @@ func show_delivery(parcel: DeliveryParcel, matched: bool) -> void:
 	if parcel == null:
 		return
 	var node_id: String = parcel.current_node
-	if not BoardState.NODES.has(node_id):
+	if board == null or not board.has_node(node_id):
 		node_id = "depot"
 	_append_effect("success" if matched else "miss", node_id)
 
@@ -82,7 +83,7 @@ func _draw() -> void:
 		var elapsed: float = float(effect["elapsed"])
 		var fraction: float = clampf(elapsed / EFFECT_LIFETIME, 0.0, 1.0)
 		var fade: float = 1.0 if reduced_motion else 1.0 - fraction
-		var anchor: Vector2 = CityBoardGeometry.node_point(str(effect["node"]), size)
+		var anchor: Vector2 = CityBoardGeometry.node_point(str(effect["node"]), size, board)
 		var kind: String = str(effect["kind"])
 		if kind == "tap":
 			if reduced_motion:

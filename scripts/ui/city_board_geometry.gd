@@ -14,19 +14,21 @@ const CURVATURE: Dictionary = {
 }
 
 
-static func node_point(node_id: String, bounds: Vector2) -> Vector2:
-	if not BoardState.NODES.has(node_id):
+static func node_point(node_id: String, bounds: Vector2, board: BoardState = null) -> Vector2:
+	var positions: Dictionary = board.nodes if board != null else BoardState.NODES
+	if not positions.has(node_id):
 		return Vector2.ZERO
-	var uv: Vector2 = BoardState.NODES[node_id]
+	var uv: Vector2 = positions[node_id]
 	return Vector2(uv.x * bounds.x, uv.y * bounds.y)
 
 
-static func route_point(from_id: String, to_id: String, t: float, bounds: Vector2) -> Vector2:
-	var start: Vector2 = node_point(from_id, bounds)
-	var finish: Vector2 = node_point(to_id, bounds)
-	if not BoardState.EDGES.has(from_id):
+static func route_point(from_id: String, to_id: String, t: float, bounds: Vector2, board: BoardState = null) -> Vector2:
+	var start: Vector2 = node_point(from_id, bounds, board)
+	var finish: Vector2 = node_point(to_id, bounds, board)
+	var connections: Dictionary = board.edges if board != null else BoardState.EDGES
+	if not connections.has(from_id):
 		return start
-	var options: Array = BoardState.EDGES[from_id]
+	var options: Array = connections[from_id]
 	if not options.has(to_id):
 		return start
 	var delta: Vector2 = finish - start
@@ -44,25 +46,26 @@ static func route_point(from_id: String, to_id: String, t: float, bounds: Vector
 	)
 
 
-static func route_tangent(from_id: String, to_id: String, t: float, bounds: Vector2) -> Vector2:
-	var a: Vector2 = route_point(from_id, to_id, clampf(t - 0.01, 0.0, 1.0), bounds)
-	var b: Vector2 = route_point(from_id, to_id, clampf(t + 0.01, 0.0, 1.0), bounds)
+static func route_tangent(from_id: String, to_id: String, t: float, bounds: Vector2, board: BoardState = null) -> Vector2:
+	var a: Vector2 = route_point(from_id, to_id, clampf(t - 0.01, 0.0, 1.0), bounds, board)
+	var b: Vector2 = route_point(from_id, to_id, clampf(t + 0.01, 0.0, 1.0), bounds, board)
 	var vector: Vector2 = b - a
 	if vector.length_squared() < 0.0001:
 		return Vector2.UP
 	return vector.normalized()
 
 
-static func route_polyline(from_id: String, to_id: String, bounds: Vector2, steps: int = 20) -> PackedVector2Array:
+static func route_polyline(from_id: String, to_id: String, bounds: Vector2, steps: int = 20, board: BoardState = null) -> PackedVector2Array:
 	var result := PackedVector2Array()
-	if not BoardState.EDGES.has(from_id):
+	var connections: Dictionary = board.edges if board != null else BoardState.EDGES
+	if not connections.has(from_id):
 		return result
-	var options: Array = BoardState.EDGES[from_id]
+	var options: Array = connections[from_id]
 	if not options.has(to_id):
 		return result
 	var count: int = maxi(2, steps)
 	for index in range(count + 1):
-		result.append(route_point(from_id, to_id, float(index) / float(count), bounds))
+		result.append(route_point(from_id, to_id, float(index) / float(count), bounds, board))
 	return result
 
 

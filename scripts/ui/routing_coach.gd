@@ -22,8 +22,8 @@ static func get_guidance(controller: ShiftController) -> Dictionary:
 			nearest = parcel
 
 	if nearest == null:
-		if controller.scheduler.next_index < RouteScheduler.SCHEDULE.size():
-			var upcoming: String = str(RouteScheduler.SCHEDULE[controller.scheduler.next_index])
+		if controller.scheduler.next_index < controller.scheduler.schedule.size():
+			var upcoming: String = str(controller.scheduler.schedule[controller.scheduler.next_index])
 			return {
 				"message": "NEXT: %s (%s). Match its home!" % [upcoming.to_upper(), SYMBOLS.get(upcoming, "?")],
 				"focus": "", "needs_action": false
@@ -31,11 +31,11 @@ static func get_guidance(controller: ShiftController) -> Dictionary:
 		return {"message": "Final deliveries on their way.", "focus": "", "needs_action": false}
 
 	var junction_id: String = nearest.next_node
-	var desired: String = desired_exit(junction_id, nearest.destination)
+	var desired: String = desired_exit(junction_id, nearest.destination, controller.board)
 	if not controller.board.is_valid_edge(junction_id, desired):
 		# The package already entered an irreversible wrong branch.
 		# Never tell a player to tap toward a non-matching destination.
-		var correct_branch: String = "EAST" if nearest.destination == "green" else "WEST"
+		var correct_branch: String = desired_exit("hub", nearest.destination, controller.board).to_upper()
 		return {
 			"message": "%s took the wrong branch! Choose HUB to %s next time." % [
 				nearest.destination.to_upper(), correct_branch
@@ -50,15 +50,14 @@ static func get_guidance(controller: ShiftController) -> Dictionary:
 	return {"message": message, "focus": junction_id, "needs_action": needs_action}
 
 
-static func desired_exit(junction_id: String, destination: String) -> String:
-	match junction_id:
-		"hub":
-			if destination in ["red", "blue", "green"]:
-				return "east" if destination == "green" else "west"
-		"west":
-			if destination in ["red", "blue"]:
-				return destination
-		"east":
-			if destination in ["blue", "green"]:
-				return destination
+static func desired_exit(junction_id: String, destination: String, board: BoardState = null) -> String:
+	# Path-finding advice is read-only: switch state and scoring are untouched.
+	var roads: Dictionary = board.edges if board != null else BoardState.EDGES
+	if not roads.has(junction_id):
+		return ""
+	var exits: Array = roads[junction_id]
+	for next_id in exits:
+		var target_id: String = str(next_id)
+		if target_id == destination or LevelCatalog.path_exists(roads, target_id, destination):
+			return target_id
 	return ""

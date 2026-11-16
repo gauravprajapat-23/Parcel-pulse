@@ -21,9 +21,17 @@ func bind_controller(value: ShiftController) -> void:
 			controller.board.junction_changed.disconnect(_on_junction_changed)
 		if controller.phase_changed.is_connected(_on_phase_changed):
 			controller.phase_changed.disconnect(_on_phase_changed)
+		if controller.board.map_changed.is_connected(_on_map_changed):
+			controller.board.map_changed.disconnect(_on_map_changed)
 	controller = value
 	controller.board.junction_changed.connect(_on_junction_changed)
 	controller.phase_changed.connect(_on_phase_changed)
+	controller.board.map_changed.connect(_on_map_changed)
+	if city_art != null:
+		city_art.board = controller.board
+		city_art.queue_redraw()
+	if juice_layer != null:
+		juice_layer.board = controller.board
 	if dynamic_layer != null:
 		dynamic_layer.controller = controller
 		dynamic_layer.queue_redraw()
@@ -45,6 +53,7 @@ func _ready() -> void:
 	clip_contents = true
 	city_art = CityBoardArt.new()
 	city_art.name = "CityArt"
+	city_art.board = controller.board if controller != null else null
 	city_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(city_art)
 	city_art.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -60,6 +69,7 @@ func _ready() -> void:
 
 	juice_layer = GameJuice.new()
 	juice_layer.name = "FeedbackOverlay"
+	juice_layer.board = controller.board if controller != null else null
 	juice_layer.reduced_motion = reduced_motion
 	dynamic_layer.reduced_motion = reduced_motion
 	juice_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -79,6 +89,14 @@ func set_reduced_motion(enabled: bool) -> void:
 
 func get_junction_hit_radius() -> float:
 	return minf(72.0, maxf(48.0, minf(size.x, size.y) * 0.13))
+
+
+func _on_map_changed(_new_index: int) -> void:
+	clear_feedback()
+	if city_art != null:
+		city_art.queue_redraw()
+	if dynamic_layer != null:
+		dynamic_layer.queue_redraw()
 
 
 func _on_board_resized() -> void:
@@ -110,7 +128,7 @@ func _on_phase_changed(_phase: int) -> void:
 
 
 func _point(node_id: String) -> Vector2:
-	return CityBoardGeometry.node_point(node_id, size)
+	return CityBoardGeometry.node_point(node_id, size, controller.board)
 
 
 func _normalized_point(value: Vector2) -> Vector2:
@@ -119,7 +137,7 @@ func _normalized_point(value: Vector2) -> Vector2:
 
 func get_rendered_parcel_position(parcel: DeliveryParcel) -> Vector2:
 	return CityBoardGeometry.route_point(
-		parcel.current_node, parcel.next_node, parcel.progress, size
+		parcel.current_node, parcel.next_node, parcel.progress, size, controller.board
 	)
 
 
@@ -154,7 +172,7 @@ func toggle_at_local_position(local_position: Vector2) -> bool:
 	var radius: float = get_junction_hit_radius()
 	var nearest_id: String = ""
 	var best_distance: float = INF
-	for junction_id in BoardState.JUNCTION_IDS:
+	for junction_id in controller.board.junction_ids:
 		var distance: float = local_position.distance_to(_point(junction_id))
 		if distance <= radius and distance < best_distance:
 			nearest_id = junction_id

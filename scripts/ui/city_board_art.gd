@@ -1,6 +1,8 @@
 extends Control
 class_name CityBoardArt
 
+var board: BoardState
+
 # Static, handcrafted procedural city backdrop. No textures, plugins or
 # copyrighted artwork. Redrawn only on resize, not every gameplay frame.
 const NIGHT: Color = Color("#071C31")
@@ -22,7 +24,7 @@ func _ready() -> void:
 
 
 func _draw() -> void:
-	if size.x <= 0.0 or size.y <= 0.0:
+	if size.x <= 0.0 or size.y <= 0.0 or board == null:
 		return
 	_draw_sky_and_blocks()
 	_draw_roads()
@@ -40,9 +42,13 @@ func _uv(x: float, y: float) -> Vector2:
 
 
 func _draw_sky_and_blocks() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), NIGHT)
+	var base: Color = NIGHT
+	match board.palette:
+		1: base = Color("#183049")
+		2: base = Color("#0E3C3C")
+	draw_rect(Rect2(Vector2.ZERO, size), base)
 	for index in range(7):
-		var shade := Color("#10344C").lerp(Color("#102938"), float(index) / 6.0)
+		var shade: Color = base.lightened(0.12).lerp(base.darkened(0.07), float(index) / 6.0)
 		draw_rect(Rect2(0, size.y * float(index) / 7.0, size.x, size.y / 7.0 + 1.0), shade)
 
 	# Quiet skyline: deliberately low-contrast so destinations stay readable.
@@ -72,11 +78,11 @@ func _draw_sky_and_blocks() -> void:
 
 func _draw_roads() -> void:
 	var s: float = _scale()
-	for from_id in BoardState.EDGES.keys():
-		var exits: Array = BoardState.EDGES[from_id]
+	for from_id in board.edges.keys():
+		var exits: Array = board.edges[from_id]
 		for to_id in exits:
 			var road: PackedVector2Array = CityBoardGeometry.route_polyline(
-				str(from_id), str(to_id), size, 20
+				str(from_id), str(to_id), size, 20, board
 			)
 			draw_polyline(road, Color("#061421"), 43.0 * s, true)
 			draw_polyline(road, CURB, 36.0 * s, true)
@@ -85,10 +91,10 @@ func _draw_roads() -> void:
 			for marker in range(2, 9, 2):
 				var fraction: float = float(marker) / 10.0
 				var before: Vector2 = CityBoardGeometry.route_point(
-					str(from_id), str(to_id), fraction - 0.025, size
+					str(from_id), str(to_id), fraction - 0.025, size, board
 				)
 				var after: Vector2 = CityBoardGeometry.route_point(
-					str(from_id), str(to_id), fraction + 0.025, size
+					str(from_id), str(to_id), fraction + 0.025, size, board
 				)
 				draw_line(before, after, Color("#8DB0BF", 0.7), 2.0 * s, true)
 
@@ -146,7 +152,7 @@ func _draw_destinations() -> void:
 
 func _draw_house(node_id: String, accent: Color) -> void:
 	var s: float = _scale()
-	var center: Vector2 = CityBoardGeometry.node_point(node_id, size) + Vector2(0, -21) * s
+	var center: Vector2 = CityBoardGeometry.node_point(node_id, size, board) + Vector2(0, -21) * s
 	var half_width: float = 33.0 * s
 	var top: float = center.y - 26.0 * s
 	var front: Rect2 = Rect2(
@@ -187,7 +193,7 @@ func _draw_house(node_id: String, accent: Color) -> void:
 
 func _draw_depot() -> void:
 	var s: float = _scale()
-	var center: Vector2 = CityBoardGeometry.node_point("depot", size) + Vector2(0, 15) * s
+	var center: Vector2 = CityBoardGeometry.node_point("depot", size, board) + Vector2(0, 15) * s
 	var body: Rect2 = Rect2(center + Vector2(-55, -24) * s, Vector2(110, 49) * s)
 	draw_rect(Rect2(body.position + Vector2(4, 4) * s, body.size), Color("#07131E", 0.55))
 	draw_rect(body, Color("#426982"))

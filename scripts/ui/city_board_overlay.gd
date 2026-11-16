@@ -57,18 +57,17 @@ func _scale() -> float:
 
 
 func _point(node_id: String) -> Vector2:
-	return CityBoardGeometry.node_point(node_id, size)
+	return CityBoardGeometry.node_point(node_id, size, controller.board)
 
 
 func _draw_active_routes() -> void:
 	var s: float = _scale()
-	var active_roads: Array[String] = ["depot", "hub", "west", "east"]
-	for from_id in active_roads:
+	for from_id in controller.board.edges.keys():
 		var to_id: String = controller.board.get_next_node(from_id)
 		if not controller.board.is_valid_edge(from_id, to_id):
 			continue
 		var tint: Color = _route_color(to_id)
-		var road := CityBoardGeometry.route_polyline(from_id, to_id, size, 20)
+		var road := CityBoardGeometry.route_polyline(str(from_id), to_id, size, 20, controller.board)
 		var aura: Color = tint
 		aura.a = 0.18
 		draw_polyline(road, aura, 17.0 * s, true)
@@ -86,14 +85,17 @@ func _route_color(destination_id: String) -> Color:
 		"red": return COLOR_RED
 		"blue": return COLOR_BLUE
 		"green": return COLOR_GREEN
-		"west": return COLOR_RED
-		"east": return COLOR_GREEN
+		_:
+			if controller != null and controller.board.is_junction(destination_id):
+				var next_id: String = controller.board.get_next_node(destination_id)
+				if next_id != "" and next_id != destination_id:
+					return _route_color(next_id)
 	return Color("#73E4DE")
 
 
 func _draw_chevron(from_id: String, to_id: String, t: float, tint: Color, s: float) -> void:
-	var point: Vector2 = CityBoardGeometry.route_point(from_id, to_id, t, size)
-	var tangent: Vector2 = CityBoardGeometry.route_tangent(from_id, to_id, t, size)
+	var point: Vector2 = CityBoardGeometry.route_point(from_id, to_id, t, size, controller.board)
+	var tangent: Vector2 = CityBoardGeometry.route_tangent(from_id, to_id, t, size, controller.board)
 	var perpendicular := Vector2(-tangent.y, tangent.x)
 	var tip: Vector2 = point + tangent * 6.0 * s
 	var back: Vector2 = point - tangent * 4.0 * s
@@ -103,10 +105,10 @@ func _draw_chevron(from_id: String, to_id: String, t: float, tint: Color, s: flo
 
 func _draw_junctions() -> void:
 	var s: float = _scale()
-	for junction_id in BoardState.JUNCTION_IDS:
+	for junction_id in controller.board.junction_ids:
 		var center: Vector2 = _point(junction_id)
 		var route: String = controller.board.get_next_node(junction_id)
-		var heading: Vector2 = CityBoardGeometry.route_tangent(junction_id, route, 0.02, size)
+		var heading: Vector2 = CityBoardGeometry.route_tangent(junction_id, route, 0.02, size, controller.board)
 		draw_circle(center + Vector2(1, 4) * s, 30 * s, Color("#07121C", 0.65), true)
 		draw_circle(center, 30 * s, Color("#F9B852", 0.20), true)
 		draw_circle(center, 24 * s, GOLD, true)
@@ -135,10 +137,10 @@ func _draw_carts() -> void:
 		if not parcel.active:
 			continue
 		var at: Vector2 = CityBoardGeometry.route_point(
-			parcel.current_node, parcel.next_node, parcel.progress, size
+			parcel.current_node, parcel.next_node, parcel.progress, size, controller.board
 		)
 		var direction: Vector2 = CityBoardGeometry.route_tangent(
-			parcel.current_node, parcel.next_node, parcel.progress, size
+			parcel.current_node, parcel.next_node, parcel.progress, size, controller.board
 		)
 		_draw_cart(at, direction, parcel.destination, _scale())
 
