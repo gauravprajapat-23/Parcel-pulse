@@ -9,6 +9,9 @@ var guide_needs_action: bool = false
 var route_flow_phase: float = 0.0
 var reduced_motion: bool = false
 var _draw_accumulator: float = 0.0
+var _junction_angles: Dictionary = {}
+var _junction_targets: Dictionary = {}
+const JUNCTION_ROTATION_SPEED: float = 14.0
 const VISUAL_FRAME_STEP: float = 1.0 / 30.0
 
 const COLOR_RED: Color = Color("#FF738C")
@@ -18,10 +21,57 @@ const GOLD: Color = Color("#FFD16B")
 const INK: Color = Color("#123046")
 
 
+func reset_junction_animations() -> void:
+	_junction_angles.clear()
+	_junction_targets.clear()
+	queue_redraw()
+
+
+func selected_junction_heading(node_id: String) -> Vector2:
+	if controller == null or not controller.board.is_junction(node_id):
+		return Vector2.UP
+	var route: String = controller.board.get_next_node(node_id)
+	return CityBoardGeometry.route_tangent(node_id, route, 0.05, size, controller.board)
+
+
+func displayed_junction_heading(node_id: String) -> Vector2:
+	if _junction_angles.has(node_id):
+		return Vector2.RIGHT.rotated(float(_junction_angles[node_id]))
+	return selected_junction_heading(node_id)
+
+
+func animate_junction(node_id: String) -> void:
+	if controller == null or not controller.board.is_junction(node_id):
+		return
+	var selected_route: String = controller.board.get_next_node(node_id)
+	var target_angle: float = selected_junction_heading(node_id).angle()
+	if reduced_motion:
+		_junction_angles[node_id] = target_angle
+		_junction_targets.erase(node_id)
+		queue_redraw()
+		return
+	if not _junction_angles.has(node_id):
+		# The controller signal fires after the selected exit changes.
+		# The other branch gives the actual previous arrow orientation.
+		var exits: Array = controller.board.edges[node_id]
+		for exit_id in exits:
+			if str(exit_id) != selected_route:
+				var previous: Vector2 = CityBoardGeometry.route_tangent(
+					node_id, str(exit_id), 0.05, size, controller.board
+				)
+				_junction_angles[node_id] = previous.angle()
+				break
+	_junction_targets[node_id] = target_angle
+	queue_redraw()
+
+
 func set_reduced_motion(enabled: bool) -> void:
 	reduced_motion = enabled
 	if enabled:
 		route_flow_phase = 0.0
+		for node_id in _junction_targets.keys():
+			_junction_angles[node_id] = float(_junction_targets[node_id])
+		_junction_targets.clear()
 	_draw_accumulator = 0.0
 	queue_redraw()
 
@@ -33,6 +83,16 @@ func advance_visual(delta: float) -> void:
 	# Accessibility: keep the carts updating, but remove decorative motion.
 	if not reduced_motion:
 		route_flow_phase = fposmod(route_flow_phase + step * 0.22, 1.0)
+	for node_id in _junction_targets.keys():
+		var target_angle: float = float(_junction_targets[node_id])
+		var current_angle: float = float(_junction_angles[node_id])
+		var next_angle: float = lerp_angle(
+			current_angle, target_angle, clampf(step * JUNCTION_ROTATION_SPEED, 0.0, 1.0)
+		)
+		if absf(wrapf(target_angle - next_angle, -PI, PI)) <= 0.02:
+			next_angle = target_angle
+			_junction_targets.erase(node_id)
+		_junction_angles[node_id] = next_angle
 	_draw_accumulator += step
 	if _draw_accumulator >= VISUAL_FRAME_STEP:
 		_draw_accumulator = fposmod(_draw_accumulator, VISUAL_FRAME_STEP)
@@ -107,20 +167,21 @@ func _draw_junctions() -> void:
 	var s: float = _scale()
 	for junction_id in controller.board.junction_ids:
 		var center: Vector2 = _point(junction_id)
-		var route: String = controller.board.get_next_node(junction_id)
-		var heading: Vector2 = CityBoardGeometry.route_tangent(junction_id, route, 0.02, size, controller.board)
+		var heading: Vector2 = displayed_junction_heading(junction_id)
 		draw_circle(center + Vector2(1, 4) * s, 30 * s, Color("#07121C", 0.65), true)
 		draw_circle(center, 30 * s, Color("#F9B852", 0.20), true)
 		draw_circle(center, 24 * s, GOLD, true)
 		draw_circle(center, 18 * s, Color("#895B2E"), true)
 		draw_circle(center, 14 * s, Color("#F9CB70"), true)
 		var tangent := Vector2(-heading.y, heading.x)
-		var point: Vector2 = center + heading * 10.0 * s
-		draw_line(center - heading * 7.0 * s, point, INK, 3.3 * s, true)
+		# A wide, asymmetric arrowhead makes the selected branch readable
+		# at a glance, even with the guide turned off.
+		var point: Vector2 = center + heading * 8.0 * s
+		draw_line(center - heading * 9.0 * s, point, INK, 4.0 * s, true)
 		draw_colored_polygon(PackedVector2Array([
-			point + heading * 6.0 * s,
-			point - heading * 2.0 * s + tangent * 5.0 * s,
-			point - heading * 2.0 * s - tangent * 5.0 * s
+			point + heading * 7.0 * s,
+			point - heading * 3.0 * s + tangent * 6.5 * s,
+			point - heading * 3.0 * s - tangent * 6.5 * s
 		]), INK)
 
 	if controller.board.is_junction(guide_focus):

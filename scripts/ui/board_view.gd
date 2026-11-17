@@ -56,13 +56,13 @@ func _ready() -> void:
 	city_art.board = controller.board if controller != null else null
 	city_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(city_art)
-	city_art.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_stretch_layer(city_art)
 
 	dynamic_layer = CityBoardOverlay.new()
 	dynamic_layer.name = "DynamicOverlay"
 	dynamic_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(dynamic_layer)
-	dynamic_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_stretch_layer(dynamic_layer)
 	dynamic_layer.controller = controller
 	dynamic_layer.guide_focus = guide_focus
 	dynamic_layer.guide_needs_action = guide_needs_action
@@ -74,8 +74,21 @@ func _ready() -> void:
 	dynamic_layer.reduced_motion = reduced_motion
 	juice_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(juice_layer)
-	juice_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_stretch_layer(juice_layer)
 	resized.connect(_on_board_resized)
+	# A PanelContainer can finish its size negotiation after _ready().
+	# Final synchronization also covers first launch and device resizes.
+	call_deferred("_on_board_resized")
+
+
+func _stretch_layer(layer: Control) -> void:
+	# PRESET_FULL_RECT by itself may preserve offsets from an early layout
+	# pass. All three drawing layers must use exactly the board's geometry.
+	layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layer.offset_left = 0.0
+	layer.offset_top = 0.0
+	layer.offset_right = 0.0
+	layer.offset_bottom = 0.0
 
 
 func set_reduced_motion(enabled: bool) -> void:
@@ -93,6 +106,8 @@ func get_junction_hit_radius() -> float:
 
 func _on_map_changed(_new_index: int) -> void:
 	clear_feedback()
+	if dynamic_layer != null:
+		dynamic_layer.reset_junction_animations()
 	if city_art != null:
 		city_art.queue_redraw()
 	if dynamic_layer != null:
@@ -100,12 +115,10 @@ func _on_map_changed(_new_index: int) -> void:
 
 
 func _on_board_resized() -> void:
-	if city_art != null:
-		city_art.queue_redraw()
-	if dynamic_layer != null:
-		dynamic_layer.queue_redraw()
-	if juice_layer != null:
-		juice_layer.queue_redraw()
+	for layer in [city_art, dynamic_layer, juice_layer]:
+		if layer != null:
+			_stretch_layer(layer)
+			layer.queue_redraw()
 
 
 func _process(delta: float) -> void:
@@ -116,7 +129,7 @@ func _process(delta: float) -> void:
 
 func _on_junction_changed(node_id: String, _target: String) -> void:
 	if dynamic_layer != null:
-		dynamic_layer.queue_redraw()
+		dynamic_layer.animate_junction(node_id)
 	if juice_layer != null:
 		juice_layer.show_junction(node_id)
 	junction_activated.emit(node_id)
