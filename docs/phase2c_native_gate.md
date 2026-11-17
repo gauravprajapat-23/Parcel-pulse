@@ -88,3 +88,12 @@ Review log contents for parser/runtime errors even if an underlying command repo
 ## Next decision
 
 Fix the specific Godot/Android problems found in this gate before adding additional levels. The current source is not claimed to be a tested release candidate.
+
+
+## UI board-fill and rotating-junction fix (post-Phase 2C)
+
+A Windows gameplay screenshot revealed a large empty board with the city drawing only in its top-left corner. The three drawing layers were using full-rectangle anchors without explicitly zeroing their offsets. `BoardView` now applies a full-rect anchors-and-offsets preset, clears all offsets, and resynchronizes the layers after the parent container finishes resizing. Road/art/touch coordinates now share the same complete board area.
+
+Junction arrows now show a visibly larger directional arrowhead and animate their heading when the selected branch changes; turning Motion OFF makes the arrow snap immediately to the correct route instead. Map changes reset any stale arrow animation state.
+
+New regression: `tests/test_board_fill_arrow.gd` checks full-layer coverage at several board dimensions, real gameplay container coverage, route-tap-driven arrow rotation, Motion OFF, pause, and a stage change. This test runs in the local gate. The fix has **not yet been rendered on the user's Windows Godot installation**, so the screenshot and native regression must be repeated before visual sign-off.

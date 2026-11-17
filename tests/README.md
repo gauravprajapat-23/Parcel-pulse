@@ -15,6 +15,7 @@ godot --headless --path . --script res://tests/test_ui_smoke.gd
 godot --headless --path . --script res://tests/test_guidance.gd
 godot --headless --path . --script res://tests/test_ui_design.gd
 godot --headless --path . --script res://tests/test_ui_city_board.gd
+godot --headless --path . --script res://tests/test_board_fill_arrow.gd
 godot --headless --path . --script res://tests/test_ui_juice.gd
 godot --headless --path . --script res://tests/test_ui_responsive.gd
 godot --headless --path . --script res://tests/test_phase2_levels.gd
@@ -56,6 +57,8 @@ if ($LASTEXITCODE -ne 0) { throw "Guidance tests failed" }
 if ($LASTEXITCODE -ne 0) { throw "UI design system tests failed" }
 & $godot --headless --path . --script res://tests/test_ui_city_board.gd
 if ($LASTEXITCODE -ne 0) { throw "City board tests failed" }
+& $godot --headless --path . --script res://tests/test_board_fill_arrow.gd
+if ($LASTEXITCODE -ne 0) { throw "Board layout or route arrow tests failed" }
 & $godot --headless --path . --script res://tests/test_ui_juice.gd
 if ($LASTEXITCODE -ne 0) { throw "UI game-feel tests failed" }
 & $godot --headless --path . --script res://tests/test_ui_responsive.gd

@@ -80,6 +80,9 @@ func _test_scene_and_input() -> void:
 	_check("board builds one dynamic overlay", board.dynamic_layer is CityBoardOverlay)
 	_check("city and dynamic layers occupy the same board bounds",
 		board.city_art.size.distance_to(board.dynamic_layer.size) <= 1.0)
+	_check("city artwork fills the entire board", board.city_art.size.distance_to(board.size) < 1.0)
+	_check("moving carts fill the entire board", board.dynamic_layer.size.distance_to(board.size) < 1.0)
+	_check("floating feedback fills the entire board", board.juice_layer.size.distance_to(board.size) < 1.0)
 	_check("decorations do not block touches",
 		board.city_art.mouse_filter == Control.MOUSE_FILTER_IGNORE
 		and board.dynamic_layer.mouse_filter == Control.MOUSE_FILTER_IGNORE

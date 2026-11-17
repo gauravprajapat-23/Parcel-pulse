@@ -59,6 +59,7 @@ Invoke-Godot -Step 'UI regression suite' -Arguments @('--headless', '--path', $p
 Invoke-Godot -Step 'Routing guide suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_guidance.gd')
 Invoke-Godot -Step 'UI-01A design suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_ui_design.gd')
 Invoke-Godot -Step 'UI-01B city board suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_ui_city_board.gd')
+Invoke-Godot -Step 'Board full-rect and arrow rotation suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_board_fill_arrow.gd')
 Invoke-Godot -Step 'UI-01C game feel suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_ui_juice.gd')
 Invoke-Godot -Step 'UI-01D mobile responsive suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_ui_responsive.gd')
 Invoke-Godot -Step 'Phase 2 maps and progression suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_phase2_levels.gd')
