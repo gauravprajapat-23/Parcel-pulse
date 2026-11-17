@@ -42,8 +42,13 @@ static func load_profile(path: String = SAVE_PATH) -> Dictionary:
 		return initial_profile()
 	var payload: String = file.get_as_text()
 	file.close()
-	var parsed: Variant = JSON.parse_string(payload)
-	return sanitize(parsed)
+	# JSON.parse_string() logs an engine ERROR on malformed content.
+	# The error-returning parser lets us recover from a corrupted save without
+	# making the full regression gate falsely appear clean.
+	var parser := JSON.new()
+	if parser.parse(payload) != OK:
+		return initial_profile()
+	return sanitize(parser.data)
 
 
 static func is_unlocked(profile: Dictionary, level_index: int) -> bool:

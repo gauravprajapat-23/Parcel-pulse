@@ -173,7 +173,7 @@ func _test_next_stage_ui() -> void:
 	game.previous_level_button.pressed.emit()
 
 	for index in range(LevelCatalog.count()):
-		_check("selected stage is unlocked" % index,
+		_check("selected stage %d is unlocked" % index,
 			ProgressStore.is_unlocked(game.progress_profile, index))
 		game.play_button.pressed.emit()
 		_check("stage %d runs" % index, game.controller.phase == ShiftController.Phase.RUNNING)

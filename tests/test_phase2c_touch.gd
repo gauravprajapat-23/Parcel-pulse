@@ -83,7 +83,7 @@ func _exercise_map(level_index: int) -> void:
 	raw_touch.position = position
 	view._gui_input(raw_touch)
 	_check("stage %d: release + emulated touch never double-toggle" % level_index,
-		controller.board.get_next_node(first_junction) == toggled and events == 1)
+		controller.board.get_next_node(first_junction) == toggled and events[0] == 1)
 	controller.set_paused(true)
 	_check("stage %d: paused touch is blocked" % level_index,
 		not view.toggle_at_local_position(position))
