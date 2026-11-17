@@ -38,7 +38,6 @@ function Invoke-Godot {
     foreach ($line in $textLines) {
         Write-Host $line
     }
-    $combined = $textLines -join "`n"
     if ($code -ne 0) {
         throw "$Step failed with exit code $code"
     }
@@ -46,7 +45,7 @@ function Invoke-Godot {
     # Include the prefix seen when Windows PowerShell wraps native stderr;
     # WARNINGS are still displayed, but are not confused with script errors.
     $engineFailures = @($textLines | Where-Object {
-        $_ -match '(?i)(?:^|\\s)(?:SCRIPT ERROR:|ERROR:|FATAL ERROR:|CRASH:)'
+        $_ -match '(?i)(?:^|\s)(?:SCRIPT ERROR:|ERROR:|FATAL ERROR:|CRASH:)'
     })
     if ($engineFailures.Count -gt 0) {
         throw "$Step reported $($engineFailures.Count) Godot engine error line(s), despite exit code 0."
