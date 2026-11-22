@@ -9,6 +9,9 @@ signal shift_finished(success: bool, score: int, correct: int, mistakes: int)
 signal level_changed(level_index: int)
 signal dispatch_changed()
 signal dispatch_completed(title: String, reward: int)
+signal incident_changed()
+signal incident_started(junction_id: String)
+signal incident_resolved(junction_id: String, cleared_by_player: bool, reward: int)
 
 enum Phase { READY, RUNNING, PAUSED, FINISHED }
 
@@ -59,6 +62,12 @@ var mission_progress: int = 0
 var missions_completed: int = 0
 var dispatch_bonus_score: int = 0
 var last_mission_reward: int = 0
+
+# ARCADE-03 opt-in hazard module: separate from Classic and controller-only
+# Arcade simulations. The interactive GameScreen enables it explicitly.
+var incidents_enabled: bool = false
+var incidents: RoadIncidents = RoadIncidents.new()
+var incident_bonus_score: int = 0
 
 
 func select_level(index: int) -> bool:
@@ -123,7 +132,10 @@ func _reset_session() -> void:
 	missions_completed = 0
 	dispatch_bonus_score = 0
 	last_mission_reward = 0
+	incidents.reset()
+	incident_bonus_score = 0
 	dispatch_changed.emit()
+	incident_changed.emit()
 
 
 func current_dispatch() -> Dictionary:
@@ -177,6 +189,24 @@ func _advance_dispatch(
 	return {}
 
 
+func clear_road_incident() -> bool:
+	if phase != Phase.RUNNING or not arcade_mode or not incidents_enabled:
+		return false
+	if not incidents.active:
+		return false
+	var junction_id: String = incidents.node_id
+	if not incidents.clear():
+		return false
+	var reward: int = RoadIncidents.CLEAR_BONUS
+	score += reward
+	bonus_score += reward
+	incident_bonus_score += reward
+	incident_changed.emit()
+	incident_resolved.emit(junction_id, true, reward)
+	totals_changed.emit(score, correct, mistakes)
+	return true
+
+
 func activate_focus() -> bool:
 	# Two optional slow-time assists per shift. Cannot consume charges while
 	# paused, outside a shift, or when a boost is already running.
@@ -209,6 +239,14 @@ func advance(delta: float) -> void:
 	# Godot calls this from _physics_process at a fixed physics tick.
 	if phase != Phase.RUNNING or delta <= 0.0:
 		return
+	if arcade_mode and incidents_enabled:
+		var incident_event: String = incidents.advance(delta, board)
+		if incident_event == "started":
+			incident_changed.emit()
+			incident_started.emit(incidents.node_id)
+		elif incident_event == "expired":
+			incident_changed.emit()
+			incident_resolved.emit(incidents.node_id, false, 0)
 	var simulation_delta: float = delta
 	if arcade_mode:
 		var speed: float = 1.0
@@ -261,9 +299,12 @@ func _advance_parcel(parcel: DeliveryParcel, delta: float) -> void:
 	var hops: int = 0
 	while remaining > 0.000001 and parcel.active and hops < 16:
 		hops += 1
-		var seconds_left: float = SEGMENT_SECONDS * (1.0 - parcel.progress)
+		var road_speed: float = 1.0
+		if arcade_mode and incidents_enabled:
+			road_speed = incidents.speed_factor(parcel.current_node, parcel.next_node)
+		var seconds_left: float = SEGMENT_SECONDS * (1.0 - parcel.progress) / road_speed
 		var step: float = minf(remaining, seconds_left)
-		parcel.progress = minf(1.0, parcel.progress + step / SEGMENT_SECONDS)
+		parcel.progress = minf(1.0, parcel.progress + step * road_speed / SEGMENT_SECONDS)
 		if parcel.is_express:
 			parcel.express_time_left = maxf(0.0, parcel.express_time_left - step)
 		remaining -= step
@@ -339,6 +380,9 @@ func _finish(success: bool) -> void:
 		return
 	phase = Phase.FINISHED
 	last_success = success
+	if incidents.active:
+		incidents.cancel()
+		incident_changed.emit()
 	for parcel in parcels:
 		parcel.active = false
 	phase_changed.emit(phase)
