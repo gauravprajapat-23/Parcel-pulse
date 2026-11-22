@@ -21,6 +21,7 @@ godot --headless --path . --script res://tests/test_ui_responsive.gd
 godot --headless --path . --script res://tests/test_phase2_levels.gd
 godot --headless --path . --script res://tests/test_phase2b_progression.gd
 godot --headless --path . --script res://tests/test_phase2c_touch.gd
+godot --headless --path . --script res://tests/test_arcade_upgrade.gd
 ```
 
 Successful tests print `Parcel Pulse Phase 1: N passed, 0 failed.` and return exit code 0. A failed assertion reports `FAIL` and returns exit code 1.

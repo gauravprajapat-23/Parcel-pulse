@@ -13,6 +13,20 @@ Read [Phase 2C native gate](docs/phase2c_native_gate.md), [Phase 2 maps and prog
 [Phase 2B acceptance](docs/phase2b_difficulty_validation.md) for implementation
 and verification.
 
+## Arcade gameplay — more than just switching arrows
+
+The playable screen now enables an optional **Arcade** ruleset:
+
+- Every fourth *spawned* parcel is a **Gold Express** delivery. Route it correctly before its countdown expires for a **+100 bonus**. It still counts as a normal delivery if the timer runs out—there is no extra penalty.
+- Correct deliveries build a **COMBO**. Beginning with the third, successfully spawned parcels award progressively larger bonuses, capped at +100 extra each. An incorrect delivery breaks the combo.
+- Every fifth consecutive correct Arcade delivery triggers **RUSH HOUR**: slightly faster traffic for seven seconds. The orange/gold lane glow and banner call it out.
+- **FOCUS ×2** in the lower-right corner of the board gives two four-second slow-time assists per shift. Focus and Rush cannot stack into an unfair speed spike. Focus pauses while the game is paused.
+- The board displays a combo/rush status, Express carts have gold countdown rings, and floating points reflect the actual score awarded. MOTION OFF disables extra decorative movement without disabling gameplay.
+
+Classic controller-only simulations, existing level schedules, mistake limits and unlocks remain compatible; Arcade is enabled by the real game screen. No monetization or online connection is needed.
+
+See [Arcade design and acceptance](docs/arcade_gameplay_upgrade.md) for the player journey, balance and device verification.
+
 ## Gameplay and current features
 
 - Portrait-first layout with procedural roads, packages, junctions and destinations.
@@ -50,6 +64,7 @@ godot --headless --path . --script res://tests/test_ui_responsive.gd
 godot --headless --path . --script res://tests/test_phase2_levels.gd
 godot --headless --path . --script res://tests/test_phase2b_progression.gd
 godot --headless --path . --script res://tests/test_phase2c_touch.gd
+godot --headless --path . --script res://tests/test_arcade_upgrade.gd
 ```
 
 Read the [UI-01D Android release gate](docs/ui_01d_android_release_gate.md), [UI-01C game feel guide](docs/ui_01c_game_feel.md) and [UI-01B city board guide](docs/ui_01b_city_board.md) and [UI-01A design system](docs/ui_01a_design_system.md) for reusable components and its validation checklist. Read [tests/README.md](tests/README.md) for Windows commands and a physical Android smoke-test checklist. The [first-session validation plan](docs/first_session_validation.md) covers the guided tutorial and player comprehension test. The Android debug APK script and preset are documented in [docs/android_verification.md](docs/android_verification.md).
