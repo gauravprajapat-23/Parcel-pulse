@@ -203,6 +203,11 @@ func _draw_road_incident() -> void:
 		incident.approach_from, incident.node_id, 0.52, size, controller.board
 	)
 	var amber := Color("#FFB53D")
+	var affected_road := CityBoardGeometry.route_polyline(
+		incident.approach_from, incident.node_id, size, 20, controller.board
+	)
+	draw_polyline(affected_road, Color("#FF9629", 0.30), 19.0 * s, true)
+	draw_polyline(affected_road, Color("#FFD26B", 0.80), 3.0 * s, true)
 	draw_circle(center, 21.0 * s, Color("#FF8A24", 0.22), true)
 	draw_circle(center, 15.5 * s, Color("#50371E"), true)
 	draw_arc(center, 19.0 * s, 0.0, TAU, 32, amber, 3.5 * s, true)

@@ -226,6 +226,10 @@ func _layout_arcade_controls() -> void:
 	# Keep both 48px high controls on opposite corners of the board,
 	# preserving a clear central gap for the depot even on narrow phones.
 	var button_width: float = clampf((size.x - 44.0) * 0.5, 78.0, 118.0)
+	# Control.size cannot shrink below custom_minimum_size: adjust both
+	# before positioning or narrow phones will get overlapping buttons.
+	focus_button.custom_minimum_size = Vector2(button_width, 48.0)
+	clear_road_button.custom_minimum_size = Vector2(button_width, 48.0)
 	focus_button.size = Vector2(button_width, 48.0)
 	focus_button.position = Vector2(
 		maxf(8.0, size.x - button_width - 12.0),

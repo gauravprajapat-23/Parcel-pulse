@@ -208,6 +208,25 @@ func _test_game_screen_controls() -> void:
 		game.controller.incidents.active
 		and game.board_view.clear_road_button.visible
 		and game.board_view.clear_road_button.text.contains("CLEAR"))
+	for small_size in [Vector2(215, 250), Vector2(228, 285), Vector2(260, 340)]:
+		var isolated := BoardView.new()
+		isolated.bind_controller(game.controller)
+		isolated.size = small_size
+		root.add_child(isolated)
+		await process_frame
+		var focus_rect := Rect2(
+			isolated.focus_button.position, isolated.focus_button.size
+		)
+		var clear_rect := Rect2(
+			isolated.clear_road_button.position, isolated.clear_road_button.size
+		)
+		_check("board %s: rescue/Focus controls never overlap" % small_size,
+			not focus_rect.intersects(clear_rect))
+		_check("board %s: controls remain inside board" % small_size,
+			Rect2(Vector2.ZERO, isolated.size).encloses(focus_rect)
+			and Rect2(Vector2.ZERO, isolated.size).encloses(clear_rect))
+		isolated.queue_free()
+		await process_frame
 	var mark: Vector2 = game.board_view.incident_marker_position()
 	_check("road warning point lies inside the visible board",
 		Rect2(Vector2.ZERO, game.board_view.size).has_point(mark))
