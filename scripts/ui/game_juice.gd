@@ -44,6 +44,13 @@ func show_delivery(
 		effects[effects.size() - 1]["express"] = parcel.is_express and matched and points > 100
 
 
+func show_road_rescue_reward(junction_id: String, points: int) -> void:
+	if board == null or not board.is_junction(junction_id) or points <= 0:
+		return
+	_append_effect("rescue", junction_id)
+	effects[effects.size() - 1]["points"] = points
+
+
 func show_dispatch_reward(points: int) -> void:
 	if board == null or points <= 0:
 		return
@@ -112,6 +119,8 @@ func _draw() -> void:
 			tint = Color("#FFE58B") if is_express else SUCCESS_COLOR
 		elif kind == "dispatch":
 			tint = TAP_COLOR
+		elif kind == "rescue":
+			tint = SUCCESS_COLOR
 		tint.a = fade
 		var label: String = "MISROUTE!"
 		if kind == "success":
@@ -120,6 +129,8 @@ func _draw() -> void:
 				label = "EXPRESS " + label
 		elif kind == "dispatch":
 			label = "CONTRACT +%d" % int(effect.get("points", 0))
+		elif kind == "rescue":
+			label = "ROAD CLEAR +%d" % int(effect.get("points", 0))
 		var rise: float = 0.0 if reduced_motion else fraction * 33.0
 		var position: Vector2 = anchor + Vector2(0.0, (-35.0 - rise) * scale_factor)
 		var font_size: int = maxi(14, roundi((22.0 if kind == "success" else 16.0) * scale_factor))

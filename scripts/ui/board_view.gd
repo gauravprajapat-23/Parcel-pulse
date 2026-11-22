@@ -2,6 +2,7 @@ extends Control
 class_name BoardView
 
 signal junction_activated(node_id: String)
+signal incident_cleared()
 
 # UI-01B composition layer. CityBoardArt renders static decorative content,
 # CityBoardOverlay renders moving visuals. Both use the same visual geometry.
@@ -15,6 +16,7 @@ var juice_layer: GameJuice
 var reduced_motion: bool = false
 var arcade_banner: Label
 var focus_button: Button
+var clear_road_button: Button
 
 
 func bind_controller(value: ShiftController) -> void:
@@ -25,10 +27,13 @@ func bind_controller(value: ShiftController) -> void:
 			controller.phase_changed.disconnect(_on_phase_changed)
 		if controller.board.map_changed.is_connected(_on_map_changed):
 			controller.board.map_changed.disconnect(_on_map_changed)
+		if controller.incident_changed.is_connected(_on_incident_changed):
+			controller.incident_changed.disconnect(_on_incident_changed)
 	controller = value
 	controller.board.junction_changed.connect(_on_junction_changed)
 	controller.phase_changed.connect(_on_phase_changed)
 	controller.board.map_changed.connect(_on_map_changed)
+	controller.incident_changed.connect(_on_incident_changed)
 	if city_art != null:
 		city_art.board = controller.board
 		city_art.queue_redraw()
@@ -107,6 +112,16 @@ func _build_arcade_controls() -> void:
 	focus_button.text = "FOCUS ×2"
 	focus_button.pressed.connect(_on_focus_pressed)
 	add_child(focus_button)
+
+	clear_road_button = Button.new()
+	clear_road_button.name = "ClearRoadButton"
+	clear_road_button.custom_minimum_size = Vector2(110, 48)
+	ParcelTheme.style_button(clear_road_button, "gold")
+	clear_road_button.add_theme_font_size_override("font_size", 12)
+	clear_road_button.tooltip_text = "Clear the road jam and earn 75 bonus points"
+	clear_road_button.text = "CLEAR ROAD"
+	clear_road_button.pressed.connect(_on_clear_road_pressed)
+	add_child(clear_road_button)
 	_update_arcade_controls()
 
 
@@ -117,8 +132,50 @@ func _on_focus_pressed() -> void:
 			dynamic_layer.queue_redraw()
 
 
+func _on_clear_road_pressed() -> void:
+	if controller == null or not controller.clear_road_incident():
+		return
+	incident_cleared.emit()
+	_update_arcade_controls()
+	if dynamic_layer != null:
+		dynamic_layer.queue_redraw()
+
+
+func _on_incident_changed() -> void:
+	_update_arcade_controls()
+	if dynamic_layer != null:
+		dynamic_layer.queue_redraw()
+
+
+func incident_marker_position() -> Vector2:
+	if controller == null or not controller.incidents.active:
+		return Vector2(-1000.0, -1000.0)
+	return CityBoardGeometry.route_point(
+		controller.incidents.approach_from,
+		controller.incidents.node_id, 0.52, size, controller.board
+	)
+
+
+func clear_incident_at_local_position(local_position: Vector2) -> bool:
+	if controller == null or not controller.incidents.active:
+		return false
+	if controller.phase != ShiftController.Phase.RUNNING:
+		return false
+	if not Rect2(Vector2.ZERO, size).has_point(local_position):
+		return false
+	var marker: Vector2 = incident_marker_position()
+	var junction: Vector2 = _point(controller.incidents.node_id)
+	# The marker sits on an incoming road, sometimes quite close to the
+	# gold junction. Never steal a deliberate touch on that switch itself.
+	var radius: float = minf(26.0, maxf(15.0, marker.distance_to(junction) * 0.72))
+	if local_position.distance_to(marker) > radius:
+		return false
+	_on_clear_road_pressed()
+	return true
+
+
 func _update_arcade_controls() -> void:
-	if arcade_banner == null or focus_button == null or controller == null:
+	if arcade_banner == null or focus_button == null or clear_road_button == null or controller == null:
 		return
 	var is_arcade: bool = controller.arcade_mode
 	var is_live: bool = controller.phase == ShiftController.Phase.RUNNING
@@ -127,6 +184,15 @@ func _update_arcade_controls() -> void:
 		is_live or is_paused or controller.phase == ShiftController.Phase.READY
 	)
 	focus_button.visible = is_arcade and (is_live or is_paused)
+	var incident_active: bool = (
+		is_arcade and controller.incidents_enabled and controller.incidents.active
+	)
+	clear_road_button.visible = incident_active and (is_live or is_paused)
+	clear_road_button.disabled = not is_live
+	if incident_active:
+		var clear_text: String = "CLEAR %ds" % ceili(controller.incidents.remaining)
+		if clear_road_button.text != clear_text:
+			clear_road_button.text = clear_text
 	if not is_arcade:
 		return
 	var message: String = "GOLD EXPRESS  ·  COMBOS  ·  RUSH HOUR"
@@ -157,11 +223,17 @@ func _layout_arcade_controls() -> void:
 	arcade_banner.position = Vector2(12, 8)
 	arcade_banner.size = Vector2(maxf(0.0, size.x - 24.0), 24.0)
 	arcade_banner.add_theme_font_size_override("font_size", 11 if small else 13)
-	focus_button.size = Vector2(108.0 if small else 120.0, 48.0)
+	# Keep both 48px high controls on opposite corners of the board,
+	# preserving a clear central gap for the depot even on narrow phones.
+	var button_width: float = clampf((size.x - 44.0) * 0.5, 78.0, 118.0)
+	focus_button.size = Vector2(button_width, 48.0)
 	focus_button.position = Vector2(
-		maxf(8.0, size.x - focus_button.size.x - 12.0),
-		maxf(8.0, size.y - focus_button.size.y - 12.0)
+		maxf(8.0, size.x - button_width - 12.0),
+		maxf(8.0, size.y - 60.0)
 	)
+	clear_road_button.size = Vector2(button_width, 48.0)
+	clear_road_button.position = Vector2(12.0, maxf(8.0, size.y - 60.0))
+	clear_road_button.add_theme_font_size_override("font_size", 10 if small else 12)
 
 
 func _stretch_layer(layer: Control) -> void:
@@ -240,6 +312,11 @@ func get_rendered_parcel_position(parcel: DeliveryParcel) -> Vector2:
 	)
 
 
+func show_incident_feedback(junction_id: String, reward: int) -> void:
+	if juice_layer != null:
+		juice_layer.show_road_rescue_reward(junction_id, reward)
+
+
 func show_dispatch_feedback(reward: int) -> void:
 	if juice_layer != null:
 		juice_layer.show_dispatch_reward(reward)
@@ -268,6 +345,9 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	var click := event as InputEventMouseButton
 	if not click.pressed or click.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if clear_incident_at_local_position(click.position):
+		accept_event()
 		return
 	if toggle_at_local_position(click.position):
 		accept_event()

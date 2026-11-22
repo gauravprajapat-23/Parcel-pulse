@@ -56,6 +56,7 @@ func _ready() -> void:
 	# the richer Arcade layer, without changing level unlock requirements.
 	controller.arcade_mode = true
 	controller.dispatch_enabled = true
+	controller.incidents_enabled = true
 	_build_interface()
 	progress_profile = ProgressStore.load_profile(progress_save_path)
 	# Returning players see the first unlocked uncleared level instead of
@@ -69,6 +70,8 @@ func _ready() -> void:
 	controller.delivery_scored.connect(_on_delivery_scored)
 	controller.dispatch_changed.connect(_update_dispatch)
 	controller.dispatch_completed.connect(_on_dispatch_completed)
+	controller.incident_started.connect(_on_incident_started)
+	controller.incident_resolved.connect(_on_incident_resolved)
 	controller.shift_finished.connect(_on_shift_finished)
 	_on_phase_changed(controller.phase)
 	_on_totals_changed(controller.score, controller.correct, controller.mistakes)
@@ -228,6 +231,7 @@ func _build_interface() -> void:
 	board_view.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	board_view.bind_controller(controller)
 	board_view.junction_activated.connect(_on_junction_activated)
+	board_view.incident_cleared.connect(_on_road_clear_pressed)
 	board_container.add_child(board_view)
 
 	# The guidance panel stays compact; its on/off control lives in the action bar.
@@ -479,6 +483,24 @@ func _on_sound_toggle_pressed() -> void:
 
 func _on_junction_activated(_node_id: String) -> void:
 	sfx_player.play_event("tap")
+
+
+func _on_road_clear_pressed() -> void:
+	sfx_player.play_event("success")
+
+
+func _on_incident_started(junction_id: String) -> void:
+	hint_label.text = "ROAD JAM near %s! Tap its warning or CLEAR." % junction_id.to_upper()
+
+
+func _on_incident_resolved(
+		junction_id: String, cleared_by_player: bool, reward: int
+	) -> void:
+	if cleared_by_player:
+		hint_label.text = "ROAD CLEARED! +%d BONUS" % reward
+		board_view.show_incident_feedback(junction_id, reward)
+	else:
+		hint_label.text = "Traffic reopened. Clear the next jam for bonus points."
 
 
 func _hide_results_and_reset_fx() -> void:

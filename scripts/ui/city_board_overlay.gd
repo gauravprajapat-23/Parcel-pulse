@@ -109,6 +109,7 @@ func _draw() -> void:
 		return
 	_draw_active_routes()
 	_draw_junctions()
+	_draw_road_incident()
 	_draw_carts()
 
 
@@ -191,6 +192,29 @@ func _draw_junctions() -> void:
 		glow.a = 0.23
 		draw_arc(target, 35 * s, 0.0, TAU, 44, glow, 12 * s, true)
 		draw_arc(target, 35 * s, 0.0, TAU, 44, focus_color, 3.2 * s, true)
+
+
+func _draw_road_incident() -> void:
+	if not controller.incidents_enabled or not controller.incidents.active:
+		return
+	var incident: RoadIncidents = controller.incidents
+	var s: float = _scale()
+	var center: Vector2 = CityBoardGeometry.route_point(
+		incident.approach_from, incident.node_id, 0.52, size, controller.board
+	)
+	var amber := Color("#FFB53D")
+	draw_circle(center, 21.0 * s, Color("#FF8A24", 0.22), true)
+	draw_circle(center, 15.5 * s, Color("#50371E"), true)
+	draw_arc(center, 19.0 * s, 0.0, TAU, 32, amber, 3.5 * s, true)
+	# Striped diagonal road barrier with readable warning glyph.
+	var left: Vector2 = center + Vector2(-11.0, 5.0) * s
+	var right: Vector2 = center + Vector2(11.0, -5.0) * s
+	draw_line(left, right, amber, 6.0 * s, true)
+	draw_line(left + Vector2(2, 3) * s, right + Vector2(2, 3) * s, Color("#26303D"), 2.0 * s, true)
+	draw_string(
+		get_theme_default_font(), center + Vector2(-4, -20) * s, "!",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(13, roundi(21.0 * s)), Color.WHITE
+	)
 
 
 func _draw_carts() -> void:
