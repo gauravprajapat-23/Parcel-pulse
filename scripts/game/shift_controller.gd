@@ -14,6 +14,10 @@ const REQUIRED_DELIVERIES: int = 12
 const MAX_MISTAKES: int = 3
 const SEGMENT_SECONDS: float = 1.06
 const SCORE_PER_DELIVERY: int = 100
+const FOCUS_CHARGE_STREAK: int = 3
+const FOCUS_SECONDS: float = 5.0
+const FOCUS_SPEED: float = 0.45
+const STREAK_BONUS: int = 25
 
 var board: BoardState = BoardState.new()
 var scheduler: RouteScheduler = RouteScheduler.new()
@@ -22,6 +26,11 @@ var phase: Phase = Phase.READY
 var score: int = 0
 var correct: int = 0
 var mistakes: int = 0
+var streak: int = 0
+var best_streak: int = 0
+var focus_charges: int = 0
+var focus_remaining: float = 0.0
+var last_delivery_points: int = 0
 var last_success: bool = false
 var level_index: int = 0
 var required_deliveries: int = REQUIRED_DELIVERIES
@@ -76,6 +85,11 @@ func _reset_session() -> void:
 	score = 0
 	correct = 0
 	mistakes = 0
+	streak = 0
+	best_streak = 0
+	focus_charges = 0
+	focus_remaining = 0.0
+	last_delivery_points = 0
 	last_success = false
 
 
@@ -95,11 +109,23 @@ func toggle_junction(node_id: String) -> bool:
 	return board.toggle_junction(node_id)
 
 
+func activate_focus() -> bool:
+	if phase != Phase.RUNNING or focus_charges <= 0 or focus_remaining > 0.0:
+		return false
+	focus_charges -= 1
+	focus_remaining = FOCUS_SECONDS
+	return true
+
+
 func advance(delta: float) -> void:
-	# Godot calls this from _physics_process at a fixed physics tick.
+	# Focus slows the simulation, not the wall-clock countdown.
 	if phase != Phase.RUNNING or delta <= 0.0:
 		return
-	for target in scheduler.tick(delta):
+	var simulation_delta: float = delta
+	if focus_remaining > 0.0:
+		simulation_delta *= FOCUS_SPEED
+		focus_remaining = maxf(0.0, focus_remaining - delta)
+	for target in scheduler.tick(simulation_delta):
 		if phase != Phase.RUNNING:
 			break
 		_spawn_parcel(target)
@@ -107,7 +133,7 @@ func advance(delta: float) -> void:
 		if phase != Phase.RUNNING:
 			break
 		if parcel.active:
-			_advance_parcel(parcel, delta)
+			_advance_parcel(parcel, simulation_delta)
 	for index in range(parcels.size() - 1, -1, -1):
 		if not parcels[index].active:
 			parcels.remove_at(index)
@@ -167,9 +193,19 @@ func _register_delivery(parcel: DeliveryParcel, matched: bool) -> void:
 	parcel.active = false
 	if matched:
 		correct += 1
-		score += SCORE_PER_DELIVERY
+		streak += 1
+		best_streak = maxi(best_streak, streak)
+		last_delivery_points = SCORE_PER_DELIVERY
+		# Successful decisions earn a repeatable bonus and a tactical resource.
+		if streak >= FOCUS_CHARGE_STREAK:
+			last_delivery_points += STREAK_BONUS * mini(streak - FOCUS_CHARGE_STREAK + 1, 4)
+		if streak % FOCUS_CHARGE_STREAK == 0:
+			focus_charges = mini(focus_charges + 1, 2)
+		score += last_delivery_points
 	else:
 		mistakes += 1
+		streak = 0
+		last_delivery_points = 0
 	delivery_scored.emit(parcel, matched)
 	totals_changed.emit(score, correct, mistakes)
 	if correct >= required_deliveries:

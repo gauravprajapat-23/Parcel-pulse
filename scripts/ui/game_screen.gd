@@ -13,6 +13,8 @@ var progress_label: Label
 var score_label: Label
 var mistakes_label: Label
 var hint_label: Label
+var focus_button: Button
+var streak_label: Label
 var coach_label: Label
 var guide_button: Button
 var guide_enabled: bool = true
@@ -72,6 +74,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	controller.advance(delta)
+	_update_focus_ui()
 	_update_guidance()
 
 
@@ -240,6 +243,22 @@ func _build_interface() -> void:
 	coach_label.custom_minimum_size = Vector2(0, 36)
 	ParcelTheme.label_style(coach_label, 16, ParcelTheme.GOLD_LIGHT)
 	coach_margin.add_child(coach_label)
+
+	var power_row := HBoxContainer.new()
+	power_row.add_theme_constant_override("separation", 8)
+	screen_column.add_child(power_row)
+	streak_label = Label.new()
+	streak_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	streak_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	ParcelTheme.label_style(streak_label, 13, ParcelTheme.GOLD_LIGHT)
+	power_row.add_child(streak_label)
+	focus_button = Button.new()
+	focus_button.custom_minimum_size = Vector2(132, 42)
+	ParcelTheme.style_button(focus_button, "gold")
+	focus_button.tooltip_text = "After three deliveries in a row, slow the city briefly to fix tricky routes."
+	focus_button.pressed.connect(_on_focus_pressed)
+	power_row.add_child(focus_button)
+	_update_focus_ui()
 
 	hint_label = Label.new()
 	hint_label.text = "Tap the golden junctions to switch tracks."
@@ -524,6 +543,7 @@ func _on_phase_changed(new_phase: int) -> void:
 		ShiftController.Phase.FINISHED:
 			hint_label.text = "Shift over. Review your deliveries."
 	action_bar.apply_phase(new_phase)
+	_update_focus_ui()
 	_update_level_selection()
 	board_view.queue_redraw()
 	_update_guidance()
@@ -531,13 +551,33 @@ func _on_phase_changed(new_phase: int) -> void:
 
 func _on_totals_changed(new_score: int, delivered: int, errors: int) -> void:
 	hud_panel.update_stats(delivered, new_score, errors, controller.required_deliveries)
+	_update_focus_ui()
+
+
+func _on_focus_pressed() -> void:
+	if controller.activate_focus():
+		hint_label.text = "FOCUS BOOST! The whole city slows for five seconds. Save the route!"
+		sfx_player.play_event("tap")
+		_update_focus_ui()
+
+
+func _update_focus_ui() -> void:
+	if focus_button == null or streak_label == null:
+		return
+	streak_label.text = "STREAK x%d  |  BEST %d" % [controller.streak, controller.best_streak]
+	if controller.focus_remaining > 0.0:
+		focus_button.text = "FOCUS %.1fs" % controller.focus_remaining
+		focus_button.disabled = true
+	else:
+		focus_button.text = "FOCUS (%d)" % controller.focus_charges
+		focus_button.disabled = controller.phase != ShiftController.Phase.RUNNING or controller.focus_charges <= 0
 
 
 func _on_delivery_scored(parcel: DeliveryParcel, matched: bool) -> void:
 	board_view.show_delivery_feedback(parcel, matched)
 	sfx_player.play_event("success" if matched else "mistake")
 	if matched:
-		hint_label.text = "Delivered! +%d points." % ShiftController.SCORE_PER_DELIVERY
+		hint_label.text = "COMBO x%d! +%d points%s" % [controller.streak, controller.last_delivery_points, " | Focus ready!" if controller.focus_charges > 0 else ""]
 		if _score_tween != null and _score_tween.is_running():
 			_score_tween.kill()
 		score_label.modulate = ParcelTheme.GOLD_LIGHT
