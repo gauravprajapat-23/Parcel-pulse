@@ -17,7 +17,7 @@ When all three are complete, the panel celebrates the full set. A completed job 
 ### Fairness and consistency
 
 - Only *real Arcade-spawned* parcels can advance contracts. Existing synthetic test deliveries, Classic mode, and programmatic Arcade controllers that did not explicitly opt into Dispatch preserve their original scoring.
-- Rewards are part of the authoritative `ShiftController.score` and `bonus_score`; they also contribute to `last_delivery_points`, making the floating score accurate.
+- Rewards are part of the authoritative `ShiftController.score` and `bonus_score`; they contribute to `last_delivery_points`. The parcel float shows its own points, while the separate depot float shows the contract bonus, avoiding duplicate-looking rewards.
 - A delivered parcel's `active=false` guard prevents the same parcel from receiving a reward twice.
 - On a mistake, the Clean Streak challenge resets its progress to zero. The Color Delivery job retains already completed matching parcels.
 - Express jobs award their bonus only when `is_express`, the actual timer is positive, and delivery matched its destination. An expired Express bonus never causes an extra mistake.

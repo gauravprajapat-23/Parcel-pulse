@@ -194,6 +194,13 @@ func _test_game_screen() -> void:
 		and game.dispatch_progress.value == 0.0)
 	_check("contract emits a visible floating reward",
 		game.board_view.juice_layer.active_feedback_count() >= 3)
+	var displays: Array[int] = []
+	for feedback in game.board_view.juice_layer.effects:
+		if str(feedback["kind"]) in ["success", "dispatch"]:
+			displays.append(int(feedback.get("points", 0)))
+	_check("parcel and contract floats add to the +250 score change",
+		displays.size() >= 3 and displays[displays.size() - 2] == 100
+		and displays[displays.size() - 1] == 150)
 	game.pause_button.pressed.emit()
 	_check("paused mission remains readable but cannot progress through ticking",
 		game.controller.phase == ShiftController.Phase.PAUSED

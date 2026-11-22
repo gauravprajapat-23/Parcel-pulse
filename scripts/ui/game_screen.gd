@@ -596,12 +596,20 @@ func _update_dispatch() -> void:
 
 
 func _on_dispatch_completed(title: String, reward: int) -> void:
-	hint_label.text = "%s COMPLETE! +%d BONUS" % [title, reward]
+	hint_label.text = "%s COMPLETE! +%d BONUS · +%d TOTAL" % [
+		title, reward, controller.last_delivery_points
+	]
 	board_view.show_dispatch_feedback(reward)
 
 
 func _on_delivery_scored(parcel: DeliveryParcel, matched: bool) -> void:
-	board_view.show_delivery_feedback(parcel, matched, controller.last_delivery_points)
+	# A completed contract awards a separate +150/+200/+250 at the depot.
+	# Keep the parcel float to its own points so the two effects sum to
+	# the authoritative score change rather than looking double-counted.
+	var parcel_points: int = maxi(
+		0, controller.last_delivery_points - controller.last_mission_reward
+	)
+	board_view.show_delivery_feedback(parcel, matched, parcel_points)
 	sfx_player.play_event("success" if matched else "mistake")
 	if matched:
 		hint_label.text = "Delivered! +%d points." % controller.last_delivery_points
