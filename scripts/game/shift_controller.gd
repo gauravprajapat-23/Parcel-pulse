@@ -7,6 +7,8 @@ signal delivery_scored(parcel: DeliveryParcel, matched: bool)
 signal totals_changed(score: int, correct: int, mistakes: int)
 signal shift_finished(success: bool, score: int, correct: int, mistakes: int)
 signal level_changed(level_index: int)
+signal dispatch_changed()
+signal dispatch_completed(title: String, reward: int)
 
 enum Phase { READY, RUNNING, PAUSED, FINISHED }
 
@@ -48,6 +50,15 @@ var rush_remaining: float = 0.0
 var focus_remaining: float = 0.0
 var focus_charges: int = FOCUS_START_CHARGES
 var last_delivery_points: int = 0
+
+# Dispatch is a separate opt-in submode. Existing Classic/Arcade tests keep
+# their exact scoring contracts unless this is explicitly enabled.
+var dispatch_enabled: bool = false
+var mission_index: int = 0
+var mission_progress: int = 0
+var missions_completed: int = 0
+var dispatch_bonus_score: int = 0
+var last_mission_reward: int = 0
 
 
 func select_level(index: int) -> bool:
@@ -107,6 +118,63 @@ func _reset_session() -> void:
 	focus_remaining = 0.0
 	focus_charges = FOCUS_START_CHARGES
 	last_delivery_points = 0
+	mission_index = 0
+	mission_progress = 0
+	missions_completed = 0
+	dispatch_bonus_score = 0
+	last_mission_reward = 0
+	dispatch_changed.emit()
+
+
+func current_dispatch() -> Dictionary:
+	if not arcade_mode or not dispatch_enabled:
+		return {}
+	return DispatchChallenges.mission_for(mission_index, level_index)
+
+
+func dispatch_summary() -> String:
+	var mission: Dictionary = current_dispatch()
+	if mission.is_empty():
+		return "ALL DISPATCH CHALLENGES CLEARED"
+	return "%s  %d/%d  +%d" % [
+		str(mission["title"]), mission_progress,
+		int(mission["goal"]), int(mission["reward"])
+	]
+
+
+func _advance_dispatch(
+		parcel: DeliveryParcel, matched: bool, express_on_time: bool
+	) -> Dictionary:
+	# A single completed Arcade parcel can contribute at most once. Calls
+	# originate from _register_delivery after the active-parcel guard.
+	var mission: Dictionary = current_dispatch()
+	if mission.is_empty() or not parcel.arcade_eligible:
+		return {}
+	var old_progress: int = mission_progress
+	match str(mission["id"]):
+		"color_run":
+			if matched and parcel.destination == str(mission["target"]):
+				mission_progress += 1
+		"clean_streak":
+			if matched:
+				mission_progress += 1
+			else:
+				mission_progress = 0
+		"gold_express":
+			if matched and express_on_time:
+				mission_progress += 1
+	if mission_progress >= int(mission["goal"]):
+		mission_index += 1
+		missions_completed += 1
+		mission_progress = 0
+		var reward: int = int(mission["reward"])
+		dispatch_bonus_score += reward
+		last_mission_reward = reward
+		dispatch_changed.emit()
+		return {"title": str(mission["title"]), "reward": reward}
+	if old_progress != mission_progress:
+		dispatch_changed.emit()
+	return {}
 
 
 func activate_focus() -> bool:
@@ -225,6 +293,10 @@ func _register_delivery(parcel: DeliveryParcel, matched: bool) -> void:
 		return
 	parcel.active = false
 	last_delivery_points = 0
+	last_mission_reward = 0
+	var express_on_time: bool = (
+		parcel.is_express and parcel.express_time_left > 0.0
+	)
 	if matched:
 		correct += 1
 		last_delivery_points = SCORE_PER_DELIVERY
@@ -246,7 +318,15 @@ func _register_delivery(parcel: DeliveryParcel, matched: bool) -> void:
 		mistakes += 1
 		if arcade_mode:
 			combo = 0
+	var completed: Dictionary = _advance_dispatch(parcel, matched, express_on_time)
+	if not completed.is_empty():
+		var reward: int = int(completed["reward"])
+		score += reward
+		bonus_score += reward
+		last_delivery_points += reward
 	delivery_scored.emit(parcel, matched)
+	if not completed.is_empty():
+		dispatch_completed.emit(str(completed["title"]), int(completed["reward"]))
 	totals_changed.emit(score, correct, mistakes)
 	if correct >= required_deliveries:
 		_finish(true)
