@@ -136,12 +136,18 @@ func _update_arcade_controls() -> void:
 			message += "  ·  RUSH %ds" % ceili(controller.rush_remaining)
 		elif controller.combo >= 3:
 			message += "  ·  STREAK BONUS!"
-	arcade_banner.text = message
+	if arcade_banner.text != message:
+		arcade_banner.text = message
+	var focus_text: String = "FOCUS ×%d" % controller.focus_charges
 	if controller.focus_remaining > 0.0:
-		focus_button.text = "SLOW %ds" % ceili(controller.focus_remaining)
-	else:
-		focus_button.text = "FOCUS ×%d" % controller.focus_charges
-	focus_button.disabled = not is_live or controller.focus_charges <= 0 or controller.focus_remaining > 0.0
+		focus_text = "SLOW %ds" % ceili(controller.focus_remaining)
+	if focus_button.text != focus_text:
+		focus_button.text = focus_text
+	var cannot_focus: bool = (
+		not is_live or controller.focus_charges <= 0 or controller.focus_remaining > 0.0
+	)
+	if focus_button.disabled != cannot_focus:
+		focus_button.disabled = cannot_focus
 
 
 func _layout_arcade_controls() -> void:

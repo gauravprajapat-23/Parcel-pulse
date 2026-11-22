@@ -100,9 +100,9 @@ func _draw() -> void:
 			draw_arc(anchor, radius, 0.0, TAU, 32, ring, 3.5 * scale_factor, true)
 			continue
 		var is_express: bool = bool(effect.get("express", false))
-		var tint: Color = (
-			Color("#FFE58B") if is_express else SUCCESS_COLOR
-		) if kind == "success" else MISTAKE_COLOR
+		var tint: Color = MISTAKE_COLOR
+		if kind == "success":
+			tint = Color("#FFE58B") if is_express else SUCCESS_COLOR
 		tint.a = fade
 		var label: String = "MISROUTE!"
 		if kind == "success":

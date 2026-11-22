@@ -541,7 +541,7 @@ func _on_delivery_scored(parcel: DeliveryParcel, matched: bool) -> void:
 	sfx_player.play_event("success" if matched else "mistake")
 	if matched:
 		hint_label.text = "Delivered! +%d points." % controller.last_delivery_points
-		if controller.arcade_mode and parcel.is_express:
+		if controller.arcade_mode and parcel.is_express and parcel.express_time_left > 0.0:
 			hint_label.text = "GOLD EXPRESS! +%d points." % controller.last_delivery_points
 		elif controller.arcade_mode and controller.combo >= 3:
 			hint_label.text = "COMBO ×%d! +%d points." % [
