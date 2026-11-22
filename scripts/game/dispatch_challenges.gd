@@ -3,7 +3,7 @@ class_name DispatchChallenges
 
 # The same three clear, optional mini-contracts on every map. The requested
 # color rotates with the stage. All conditions use *actual* Arcade deliveries.
-const COLOR_TARGETS: Array[String] = ["red", "green", "blue", "red", "green"]
+const COLOR_TARGETS = ["red", "green", "blue", "red", "green"]
 const MISSION_COUNT: int = 3
 
 

@@ -240,6 +240,11 @@ func get_rendered_parcel_position(parcel: DeliveryParcel) -> Vector2:
 	)
 
 
+func show_dispatch_feedback(reward: int) -> void:
+	if juice_layer != null:
+		juice_layer.show_dispatch_reward(reward)
+
+
 func show_delivery_feedback(
 		parcel: DeliveryParcel, matched: bool,
 		points: int = ShiftController.SCORE_PER_DELIVERY

@@ -14,6 +14,8 @@ var score_label: Label
 var mistakes_label: Label
 var hint_label: Label
 var coach_label: Label
+var dispatch_label: Label
+var dispatch_progress: ProgressBar
 var guide_button: Button
 var guide_enabled: bool = true
 var progress_profile: Dictionary = {}
@@ -53,6 +55,7 @@ func _ready() -> void:
 	# Existing controller-only tests use Classic scoring. Live gameplay gets
 	# the richer Arcade layer, without changing level unlock requirements.
 	controller.arcade_mode = true
+	controller.dispatch_enabled = true
 	_build_interface()
 	progress_profile = ProgressStore.load_profile(progress_save_path)
 	# Returning players see the first unlocked uncleared level instead of
@@ -64,10 +67,13 @@ func _ready() -> void:
 	controller.level_changed.connect(_on_level_changed)
 	controller.totals_changed.connect(_on_totals_changed)
 	controller.delivery_scored.connect(_on_delivery_scored)
+	controller.dispatch_changed.connect(_update_dispatch)
+	controller.dispatch_completed.connect(_on_dispatch_completed)
 	controller.shift_finished.connect(_on_shift_finished)
 	_on_phase_changed(controller.phase)
 	_on_totals_changed(controller.score, controller.correct, controller.mistakes)
 	_update_guidance()
+	_update_dispatch()
 	_update_level_selection()
 	resized.connect(_on_root_resized)
 	_apply_responsive_layout(get_viewport_rect().size)
@@ -242,7 +248,31 @@ func _build_interface() -> void:
 	coach_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	coach_label.custom_minimum_size = Vector2(0, 36)
 	ParcelTheme.label_style(coach_label, 16, ParcelTheme.GOLD_LIGHT)
-	coach_margin.add_child(coach_label)
+	var coach_stack := VBoxContainer.new()
+	coach_stack.add_theme_constant_override("separation", 4)
+	coach_margin.add_child(coach_stack)
+	coach_stack.add_child(coach_label)
+	dispatch_label = Label.new()
+	dispatch_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dispatch_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dispatch_label.clip_text = true
+	ParcelTheme.label_style(dispatch_label, 13, ParcelTheme.CYAN)
+	coach_stack.add_child(dispatch_label)
+	dispatch_progress = ProgressBar.new()
+	dispatch_progress.show_percentage = false
+	dispatch_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dispatch_progress.custom_minimum_size = Vector2(0, 7)
+	dispatch_progress.min_value = 0
+	dispatch_progress.max_value = 1
+	var track := StyleBoxFlat.new()
+	track.bg_color = ParcelTheme.PANEL_RAISED
+	track.set_corner_radius_all(5)
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = ParcelTheme.GOLD
+	fill.set_corner_radius_all(5)
+	dispatch_progress.add_theme_stylebox_override("background", track)
+	dispatch_progress.add_theme_stylebox_override("fill", fill)
+	coach_stack.add_child(dispatch_progress)
 
 	hint_label = Label.new()
 	hint_label.text = "Tap the golden junctions to switch tracks."
@@ -319,6 +349,9 @@ func _apply_responsive_layout(logical_size: Vector2) -> void:
 	hud_panel.apply_layout_metrics(int(metrics["stats_height"]))
 	board_view.custom_minimum_size = metrics["board"]
 	ParcelTheme.label_style(coach_label, int(metrics["coach_font"]), ParcelTheme.GOLD_LIGHT)
+	dispatch_label.add_theme_font_size_override(
+		"font_size", 11 if MobileLayout.profile_for(logical_size) == MobileLayout.SMALL else 13
+	)
 	coach_label.custom_minimum_size = Vector2(0, float(metrics["coach_height"]))
 	level_name_label.add_theme_font_size_override(
 		"font_size", 12 if MobileLayout.profile_for(logical_size) == MobileLayout.SMALL else 15
@@ -528,12 +561,43 @@ func _on_phase_changed(new_phase: int) -> void:
 			hint_label.text = "Shift over. Review your deliveries."
 	action_bar.apply_phase(new_phase)
 	_update_level_selection()
+	_update_dispatch()
 	board_view.queue_redraw()
 	_update_guidance()
 
 
 func _on_totals_changed(new_score: int, delivered: int, errors: int) -> void:
 	hud_panel.update_stats(delivered, new_score, errors, controller.required_deliveries)
+
+
+func _update_dispatch() -> void:
+	if dispatch_label == null or dispatch_progress == null:
+		return
+	var active: bool = controller.arcade_mode and controller.dispatch_enabled and (
+		controller.phase == ShiftController.Phase.RUNNING
+		or controller.phase == ShiftController.Phase.PAUSED
+	)
+	dispatch_label.visible = active
+	dispatch_progress.visible = active
+	if not active:
+		return
+	var mission: Dictionary = controller.current_dispatch()
+	if mission.is_empty():
+		dispatch_label.text = "DISPATCH COMPLETE • ALL 3 CONTRACTS CLEARED!"
+		dispatch_progress.max_value = 1
+		dispatch_progress.value = 1
+		return
+	dispatch_label.text = "DISPATCH  %s  %d/%d  +%d" % [
+		str(mission["title"]), controller.mission_progress,
+		int(mission["goal"]), int(mission["reward"])
+	]
+	dispatch_progress.max_value = float(mission["goal"])
+	dispatch_progress.value = float(controller.mission_progress)
+
+
+func _on_dispatch_completed(title: String, reward: int) -> void:
+	hint_label.text = "%s COMPLETE! +%d BONUS" % [title, reward]
+	board_view.show_dispatch_feedback(reward)
 
 
 func _on_delivery_scored(parcel: DeliveryParcel, matched: bool) -> void:

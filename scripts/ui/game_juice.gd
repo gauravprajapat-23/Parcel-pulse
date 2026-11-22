@@ -44,6 +44,13 @@ func show_delivery(
 		effects[effects.size() - 1]["express"] = parcel.is_express and matched and points > 100
 
 
+func show_dispatch_reward(points: int) -> void:
+	if board == null or points <= 0:
+		return
+	_append_effect("dispatch", "depot")
+	effects[effects.size() - 1]["points"] = points
+
+
 func clear_effects() -> void:
 	effects.clear()
 	_draw_accumulator = 0.0
@@ -103,12 +110,16 @@ func _draw() -> void:
 		var tint: Color = MISTAKE_COLOR
 		if kind == "success":
 			tint = Color("#FFE58B") if is_express else SUCCESS_COLOR
+		elif kind == "dispatch":
+			tint = TAP_COLOR
 		tint.a = fade
 		var label: String = "MISROUTE!"
 		if kind == "success":
 			label = "+%d" % int(effect.get("points", 100))
 			if is_express:
 				label = "EXPRESS " + label
+		elif kind == "dispatch":
+			label = "CONTRACT +%d" % int(effect.get("points", 0))
 		var rise: float = 0.0 if reduced_motion else fraction * 33.0
 		var position: Vector2 = anchor + Vector2(0.0, (-35.0 - rise) * scale_factor)
 		var font_size: int = maxi(14, roundi((22.0 if kind == "success" else 16.0) * scale_factor))
