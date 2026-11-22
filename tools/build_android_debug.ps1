@@ -66,6 +66,7 @@ Invoke-Godot -Step 'Phase 2 maps and progression suite' -Arguments @('--headless
 Invoke-Godot -Step 'Phase 2B five-map progression and difficulty suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_phase2b_progression.gd')
 Invoke-Godot -Step 'Phase 2C touch and compact-junction suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_phase2c_touch.gd')
 Invoke-Godot -Step 'Arcade game mechanics and controls suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_arcade_upgrade.gd')
+Invoke-Godot -Step 'Dispatch bonus contracts suite' -Arguments @('--headless', '--path', $project, '--script', 'res://tests/test_dispatch_challenges.gd')
 if ($TestsOnly) {
     if ($InstallOnDevice) { throw 'TestsOnly cannot be combined with InstallOnDevice.' }
     Write-Host 'All Godot regression commands returned success; Android export was intentionally skipped.' -ForegroundColor Green
