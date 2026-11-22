@@ -13,6 +13,8 @@ var city_art: CityBoardArt
 var dynamic_layer: CityBoardOverlay
 var juice_layer: GameJuice
 var reduced_motion: bool = false
+var arcade_banner: Label
+var focus_button: Button
 
 
 func bind_controller(value: ShiftController) -> void:
@@ -35,6 +37,7 @@ func bind_controller(value: ShiftController) -> void:
 	if dynamic_layer != null:
 		dynamic_layer.controller = controller
 		dynamic_layer.queue_redraw()
+	_update_arcade_controls()
 
 
 func set_guide_focus(node_id: String, needs_action: bool) -> void:
@@ -75,10 +78,84 @@ func _ready() -> void:
 	juice_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(juice_layer)
 	_stretch_layer(juice_layer)
+	_build_arcade_controls()
 	resized.connect(_on_board_resized)
 	# A PanelContainer can finish its size negotiation after _ready().
 	# Final synchronization also covers first launch and device resizes.
 	call_deferred("_on_board_resized")
+
+
+func _build_arcade_controls() -> void:
+	# Compact, non-scrolling controls sit over quiet parts of the board:
+	# the skyline and lower-right pavement, away from the route switches.
+	arcade_banner = Label.new()
+	arcade_banner.name = "ArcadeBanner"
+	arcade_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ParcelTheme.label_style(arcade_banner, 13, ParcelTheme.GOLD_LIGHT)
+	arcade_banner.add_theme_color_override("font_shadow_color", Color("#071729"))
+	arcade_banner.add_theme_constant_override("shadow_offset_x", 1)
+	arcade_banner.add_theme_constant_override("shadow_offset_y", 2)
+	arcade_banner.text = "EXPRESS  ·  COMBOS  ·  RUSH HOUR"
+	add_child(arcade_banner)
+
+	focus_button = Button.new()
+	focus_button.name = "FocusButton"
+	focus_button.custom_minimum_size = Vector2(116, 48)
+	ParcelTheme.style_button(focus_button, "gold")
+	focus_button.add_theme_font_size_override("font_size", 13)
+	focus_button.tooltip_text = "Slow time for four seconds (two charges per shift)"
+	focus_button.text = "FOCUS ×2"
+	focus_button.pressed.connect(_on_focus_pressed)
+	add_child(focus_button)
+	_update_arcade_controls()
+
+
+func _on_focus_pressed() -> void:
+	if controller != null and controller.activate_focus():
+		_update_arcade_controls()
+		if dynamic_layer != null:
+			dynamic_layer.queue_redraw()
+
+
+func _update_arcade_controls() -> void:
+	if arcade_banner == null or focus_button == null or controller == null:
+		return
+	var is_arcade: bool = controller.arcade_mode
+	var is_live: bool = controller.phase == ShiftController.Phase.RUNNING
+	var is_paused: bool = controller.phase == ShiftController.Phase.PAUSED
+	arcade_banner.visible = is_arcade and (
+		is_live or is_paused or controller.phase == ShiftController.Phase.READY
+	)
+	focus_button.visible = is_arcade and (is_live or is_paused)
+	if not is_arcade:
+		return
+	var message: String = "GOLD EXPRESS  ·  COMBOS  ·  RUSH HOUR"
+	if is_live or is_paused:
+		message = "COMBO ×%d" % controller.combo
+		if controller.rush_remaining > 0.0:
+			message += "  ·  RUSH %ds" % ceili(controller.rush_remaining)
+		elif controller.combo >= 3:
+			message += "  ·  STREAK BONUS!"
+	arcade_banner.text = message
+	if controller.focus_remaining > 0.0:
+		focus_button.text = "SLOW %ds" % ceili(controller.focus_remaining)
+	else:
+		focus_button.text = "FOCUS ×%d" % controller.focus_charges
+	focus_button.disabled = not is_live or controller.focus_charges <= 0 or controller.focus_remaining > 0.0
+
+
+func _layout_arcade_controls() -> void:
+	if arcade_banner == null or focus_button == null:
+		return
+	var small: bool = size.x < 320.0
+	arcade_banner.position = Vector2(12, 8)
+	arcade_banner.size = Vector2(maxf(0.0, size.x - 24.0), 24.0)
+	arcade_banner.add_theme_font_size_override("font_size", 11 if small else 13)
+	focus_button.size = Vector2(108.0 if small else 120.0, 48.0)
+	focus_button.position = Vector2(
+		maxf(8.0, size.x - focus_button.size.x - 12.0),
+		maxf(8.0, size.y - focus_button.size.y - 12.0)
+	)
 
 
 func _stretch_layer(layer: Control) -> void:
@@ -119,12 +196,14 @@ func _on_board_resized() -> void:
 		if layer != null:
 			_stretch_layer(layer)
 			layer.queue_redraw()
+	_layout_arcade_controls()
 
 
 func _process(delta: float) -> void:
 	if controller != null and controller.phase == ShiftController.Phase.RUNNING:
 		if dynamic_layer != null:
 			dynamic_layer.advance_visual(delta)
+	_update_arcade_controls()
 
 
 func _on_junction_changed(node_id: String, _target: String) -> void:
@@ -138,6 +217,7 @@ func _on_junction_changed(node_id: String, _target: String) -> void:
 func _on_phase_changed(_phase: int) -> void:
 	if dynamic_layer != null:
 		dynamic_layer.queue_redraw()
+	_update_arcade_controls()
 
 
 func _point(node_id: String) -> Vector2:
@@ -154,9 +234,12 @@ func get_rendered_parcel_position(parcel: DeliveryParcel) -> Vector2:
 	)
 
 
-func show_delivery_feedback(parcel: DeliveryParcel, matched: bool) -> void:
+func show_delivery_feedback(
+		parcel: DeliveryParcel, matched: bool,
+		points: int = ShiftController.SCORE_PER_DELIVERY
+	) -> void:
 	if juice_layer != null:
-		juice_layer.show_delivery(parcel, matched)
+		juice_layer.show_delivery(parcel, matched, points)
 
 
 func clear_feedback() -> void:

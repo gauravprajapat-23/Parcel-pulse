@@ -129,7 +129,7 @@ func _draw_active_routes() -> void:
 		var tint: Color = _route_color(to_id)
 		var road := CityBoardGeometry.route_polyline(str(from_id), to_id, size, 20, controller.board)
 		var aura: Color = tint
-		aura.a = 0.18
+		aura.a = 0.27 if controller.arcade_mode and controller.rush_remaining > 0.0 else 0.18
 		draw_polyline(road, aura, 17.0 * s, true)
 		var line_color: Color = tint
 		line_color.a = 0.78 + 0.08 * sin(route_flow_phase * TAU)
@@ -203,7 +203,25 @@ func _draw_carts() -> void:
 		var direction: Vector2 = CityBoardGeometry.route_tangent(
 			parcel.current_node, parcel.next_node, parcel.progress, size, controller.board
 		)
+		if parcel.is_express:
+			_draw_express_aura(at, parcel, _scale())
 		_draw_cart(at, direction, parcel.destination, _scale())
+
+
+func _draw_express_aura(center: Vector2, parcel: DeliveryParcel, s: float) -> void:
+	var golden: Color = Color("#FFE69B")
+	if not reduced_motion:
+		golden.a = 0.80 + sin(route_flow_phase * TAU * 3.0) * 0.18
+	draw_circle(center, 25.0 * s, Color("#FFB840", 0.16), true)
+	draw_arc(center, 24.0 * s, 0.0, TAU, 32, golden, 3.0 * s, true)
+	var remaining_fraction: float = clampf(
+		parcel.express_time_left / ShiftController.EXPRESS_DEADLINE, 0.0, 1.0
+	)
+	var timer_color: Color = Color("#FFE27F") if remaining_fraction > 0.0 else Color("#A6B9C2")
+	draw_arc(
+		center, 29.0 * s, -PI * 0.5,
+		-PI * 0.5 + TAU * remaining_fraction, 32, timer_color, 3.0 * s, true
+	)
 
 
 func _draw_cart(center: Vector2, direction: Vector2, target: String, s: float) -> void:

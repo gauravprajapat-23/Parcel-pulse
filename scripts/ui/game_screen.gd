@@ -50,6 +50,9 @@ const ANDROID_BACK_DEBOUNCE_MS: int = 300
 
 
 func _ready() -> void:
+	# Existing controller-only tests use Classic scoring. Live gameplay gets
+	# the richer Arcade layer, without changing level unlock requirements.
+	controller.arcade_mode = true
 	_build_interface()
 	progress_profile = ProgressStore.load_profile(progress_save_path)
 	# Returning players see the first unlocked uncleared level instead of
@@ -534,10 +537,16 @@ func _on_totals_changed(new_score: int, delivered: int, errors: int) -> void:
 
 
 func _on_delivery_scored(parcel: DeliveryParcel, matched: bool) -> void:
-	board_view.show_delivery_feedback(parcel, matched)
+	board_view.show_delivery_feedback(parcel, matched, controller.last_delivery_points)
 	sfx_player.play_event("success" if matched else "mistake")
 	if matched:
-		hint_label.text = "Delivered! +%d points." % ShiftController.SCORE_PER_DELIVERY
+		hint_label.text = "Delivered! +%d points." % controller.last_delivery_points
+		if controller.arcade_mode and parcel.is_express:
+			hint_label.text = "GOLD EXPRESS! +%d points." % controller.last_delivery_points
+		elif controller.arcade_mode and controller.combo >= 3:
+			hint_label.text = "COMBO ×%d! +%d points." % [
+				controller.combo, controller.last_delivery_points
+			]
 		if _score_tween != null and _score_tween.is_running():
 			_score_tween.kill()
 		score_label.modulate = ParcelTheme.GOLD_LIGHT

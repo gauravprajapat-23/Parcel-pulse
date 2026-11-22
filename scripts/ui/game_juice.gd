@@ -29,13 +29,19 @@ func show_junction(node_id: String) -> void:
 		_append_effect("tap", node_id)
 
 
-func show_delivery(parcel: DeliveryParcel, matched: bool) -> void:
+func show_delivery(
+		parcel: DeliveryParcel, matched: bool,
+		points: int = ShiftController.SCORE_PER_DELIVERY
+	) -> void:
 	if parcel == null:
 		return
 	var node_id: String = parcel.current_node
 	if board == null or not board.has_node(node_id):
 		node_id = "depot"
 	_append_effect("success" if matched else "miss", node_id)
+	if not effects.is_empty():
+		effects[effects.size() - 1]["points"] = points
+		effects[effects.size() - 1]["express"] = parcel.is_express and matched and points > 100
 
 
 func clear_effects() -> void:
@@ -93,9 +99,16 @@ func _draw() -> void:
 			ring.a = fade * 0.75
 			draw_arc(anchor, radius, 0.0, TAU, 32, ring, 3.5 * scale_factor, true)
 			continue
-		var tint: Color = SUCCESS_COLOR if kind == "success" else MISTAKE_COLOR
+		var is_express: bool = bool(effect.get("express", false))
+		var tint: Color = (
+			Color("#FFE58B") if is_express else SUCCESS_COLOR
+		) if kind == "success" else MISTAKE_COLOR
 		tint.a = fade
-		var label: String = "+100" if kind == "success" else "MISROUTE!"
+		var label: String = "MISROUTE!"
+		if kind == "success":
+			label = "+%d" % int(effect.get("points", 100))
+			if is_express:
+				label = "EXPRESS " + label
 		var rise: float = 0.0 if reduced_motion else fraction * 33.0
 		var position: Vector2 = anchor + Vector2(0.0, (-35.0 - rise) * scale_factor)
 		var font_size: int = maxi(14, roundi((22.0 if kind == "success" else 16.0) * scale_factor))
