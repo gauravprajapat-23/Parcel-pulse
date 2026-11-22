@@ -13,6 +13,23 @@ Read [Phase 2C native gate](docs/phase2c_native_gate.md), [Phase 2 maps and prog
 [Phase 2B acceptance](docs/phase2b_difficulty_validation.md) for implementation
 and verification.
 
+## Arcade-03 — Interactive Road Incidents
+
+The playable Arcade shifts now introduce up to **two road jams** after a
+deterministic delay. An affected street glows amber and slows incoming
+parcels to 45% of their normal speed, but roads are never removed and
+parcels remain deliverable. Tap the warning marker or the new
+**CLEAR** button to restore traffic and earn **+75** once. The jam
+automatically clears after nine seconds without costing a life. The
+timer freezes on Pause, and Retry resets incidents and their bonuses.
+
+The CLEAR and FOCUS buttons share the board's bottom corners without
+overlapping on compact phones. Classic and existing Arcade-only
+controller tests are unchanged by default.
+
+See [Interactive Road Incidents](docs/arcade_03_road_incidents.md) for
+design details, local regression commands, and phone acceptance checks.
+
 ## Arcade-02 — Live Dispatch Contracts
 
 During a real Arcade shift, a compact dispatch panel beside the guide
@@ -79,6 +96,7 @@ godot --headless --path . --script res://tests/test_phase2b_progression.gd
 godot --headless --path . --script res://tests/test_phase2c_touch.gd
 godot --headless --path . --script res://tests/test_arcade_upgrade.gd
 godot --headless --path . --script res://tests/test_dispatch_challenges.gd
+godot --headless --path . --script res://tests/test_arcade_incidents.gd
 ```
 
 Read the [UI-01D Android release gate](docs/ui_01d_android_release_gate.md), [UI-01C game feel guide](docs/ui_01c_game_feel.md) and [UI-01B city board guide](docs/ui_01b_city_board.md) and [UI-01A design system](docs/ui_01a_design_system.md) for reusable components and its validation checklist. Read [tests/README.md](tests/README.md) for Windows commands and a physical Android smoke-test checklist. The [first-session validation plan](docs/first_session_validation.md) covers the guided tutorial and player comprehension test. The Android debug APK script and preset are documented in [docs/android_verification.md](docs/android_verification.md).
